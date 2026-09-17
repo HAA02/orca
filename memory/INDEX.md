@@ -1,15 +1,15 @@
 # Orca 작업 지식
 
-작성: HAA02 / 2026-09-16 / develop  
-최신 handoff: [2026-09-16-native-chat-teammate-pin](./handoff/2026-09-16-native-chat-teammate-pin.md)
+작성: HAA02 / 2026-09-17 / develop  
+최신 handoff: [2026-09-17-opencode-model-pin-and-wip-commit](./handoff/2026-09-17-opencode-model-pin-and-wip-commit.md)
 
-이 워크트리(`/run/media/iaan/1TB-WD/Github/orca`)는 GitHub `origin` (`HAA02/orca`, upstream `stablyai/orca`) 위의 `develop`이다. 사내 거울은 GitLab `ti/orca`(최초 푸시는 이 세션).
+이 워크트리(`/run/media/iaan/1TB-WD/Github/orca`)는 GitHub `origin` (`HAA02/orca`, upstream `stablyai/orca`) 위의 `develop`이다. 사내 거울은 GitLab `ti/orca`.
 
 ## 현재 상태
 
-Native Chat 혼합 벤더 팀원(`@멘션`) + Cursor Accounts + 프로필 설정 핀이 **워킹트리에 구현됨. 기능 코드는 미커밋.** 검증은 핀 관련 vitest 일부만 통과. Electron UI 실클릭은 미확인.
+Native Chat 혼합 벤더 팀원(`@멘션`) + Cursor Accounts + 프로필 설정 핀 WIP가 **커밋됨**(`1e57b23e2e`, `08e1a57b2a`) — 더 이상 미커밋이 아니다. 같은 커밋에 **opencode 기본 실행 모델을 `opencode-go/deepseek-v4.1-flash`로 고정**(카탈로그 `launchDefaultModel` opt-in)이 포함됐다. GitHub `origin/develop` 푸시 완료, GitLab `ti/orca`는 2026-09-17 세션에서 갱신.
 
-정본 HEAD: `39b124c75b` (upstream dashboard-popout). 그 위에 로컬 변경만 있음.
+정본 HEAD: `08e1a57b2a`. upstream 정본은 `39b124c75b` (dashboard-popout)까지 반영됨.
 
 ## 게이트 / 규칙
 
@@ -20,9 +20,12 @@ Native Chat 혼합 벤더 팀원(`@멘션`) + Cursor Accounts + 프로필 설정
 - GNOME `/usr/bin/orca`와 실행 파일명이 충돌하지 않게.
 - TeamPM / gmem 스킬은 수동 전용. TeamPM 본문을 오르카 안에 다시 쓰지 말 것.
 - 오케스트레이션 가이드 정본은 `skill-guides/orchestration.md`. `generate:bundled-skill-guides`가 `skills/orchestration/SKILL.md`를 덮어쓴다.
+- pre-commit(lint-staged)이 staged 파일에 oxlint + oxfmt + react-doctor를 돌린다. 개별 파일 검증만 하지 말고 `pnpm exec oxlint` 전체를 먼저 볼 것.
+- opencode를 모델 고정 대상에서 빼려면 `launchDefaultModel` opt-in만 제거하면 된다(다른 에이전트는 영향 없음).
 
 ## 다음
 
-1. 기능 코드 커밋(사용자 지시 시) — 미커밋 목록은 handoff.
-2. Orca 재시작 후 `@grok-high` / Settings 핀 유지 실측.
+1. Orca 재시작 후 `@grok-high` / Settings 핀 유지 실측.
+2. headless E2E 환경 정비 — 이 PC에서는 headful로만 E2E 가능.
 3. `cursor agent login`, OpenCode 사용량 쿠키는 이 PC 로그인 상태(코드 아님).
+

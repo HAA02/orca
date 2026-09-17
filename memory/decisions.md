@@ -19,3 +19,9 @@
 무엇을: GitHub `origin`/`upstream`은 그대로 두고 GitLab `ti/orca`를 별도 remote로 둔다.  
 왜: 업스트림 PR 경로는 GitHub, 작업 지식 공유는 사내 GitLab. 신규 프로젝트는 `ti` 그룹만.  
 누가/언제: HAA02 / 2026-09-16.
+
+## 2026-09-17 — opencode 기본 실행 모델은 deepseek v4.1 flash
+
+무엇을: 카탈로그 `launchDefaultModel` opt-in으로 opencode만 사용자 미선택 상태에서도 `--model opencode-go/deepseek-v4.1-flash`를 붙인다. 커밋메시지 AI 기본값과 디스커버리 우선순위도 같은 모델.  
+왜: opencode를 오르카에서 띄울 때마다 모델을 수동 선택하지 않게. #9085(미선택 시 CLI 기본값 유지)는 나머지 에이전트에 그대로 두고 opencode만 명시적 예외.  
+누가/언제: HAA02 / 2026-09-17.
