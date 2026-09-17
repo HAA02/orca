@@ -145,6 +145,12 @@ export function patchPackagedProcessPath(): void {
 
   // Why: version-manager CLIs use env-node shebangs, so node must be on PATH or spawns fail (also seeds Windows user-local dirs).
   extraPaths.push(...getVersionManagerBinPaths())
+  if (process.platform === 'win32') {
+    const home = process.env.USERPROFILE ?? process.env.HOME ?? ''
+    if (home) {
+      extraPaths.push(join(home, 'AppData', 'Local', 'cursor-agent'))
+    }
+  }
 
   const pathKey = process.platform === 'win32' && process.env.Path !== undefined ? 'Path' : 'PATH'
   const currentPath = process.env[pathKey] ?? ''

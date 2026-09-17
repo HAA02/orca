@@ -1,41 +1,51 @@
 import { describe, expect, it } from 'vitest'
 import {
   CURSOR_IDE_AGENT_LAUNCH,
+  CURSOR_STANDALONE_AGENT_LAUNCH,
   resolveCursorCommandOverride,
   resolveCursorExpectedProcess,
   resolveCursorModelDiscoveryArgs,
+  resolveDefaultCursorLaunchCommand,
   resolveTuiExpectedProcess,
   suggestCursorIdeCliLaunch
 } from './cursor-agent-command'
 import { resolveAgentLaunchCommand } from './tui-agent-launch-command'
 
 describe('cursor agent command', () => {
-  it('prefers the IDE CLI when cursor is on PATH', () => {
-    expect(
-      suggestCursorIdeCliLaunch({
-        cursorAgentOnPath: false,
-        cursorOnPath: true
-      })
-    ).toBe(CURSOR_IDE_AGENT_LAUNCH)
-    expect(
-      suggestCursorIdeCliLaunch({
-        cursorAgentOnPath: true,
-        cursorOnPath: true
-      })
-    ).toBe(CURSOR_IDE_AGENT_LAUNCH)
-    expect(
-      suggestCursorIdeCliLaunch({
-        existingOverride: 'npx cursor-agent',
-        cursorAgentOnPath: false,
-        cursorOnPath: true
-      })
-    ).toBeUndefined()
-    expect(
-      suggestCursorIdeCliLaunch({
-        cursorAgentOnPath: true,
-        cursorOnPath: false
-      })
-    ).toBeUndefined()
+  it('prefers the IDE CLI when cursor is on PATH on macOS/Linux', () => {
+    const previousPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+    try {
+      expect(
+        suggestCursorIdeCliLaunch({
+          cursorAgentOnPath: false,
+          cursorOnPath: true
+        })
+      ).toBe(CURSOR_IDE_AGENT_LAUNCH)
+      expect(
+        suggestCursorIdeCliLaunch({
+          cursorAgentOnPath: true,
+          cursorOnPath: true
+        })
+      ).toBe(CURSOR_IDE_AGENT_LAUNCH)
+      expect(
+        suggestCursorIdeCliLaunch({
+          existingOverride: 'npx cursor-agent',
+          cursorAgentOnPath: false,
+          cursorOnPath: true
+        })
+      ).toBeUndefined()
+      expect(
+        suggestCursorIdeCliLaunch({
+          cursorAgentOnPath: true,
+          cursorOnPath: false
+        })
+      ).toBeUndefined()
+    } finally {
+      if (previousPlatform) {
+        Object.defineProperty(process, 'platform', previousPlatform)
+      }
+    }
   })
 
   it('waits on the IDE process name when launching cursor agent', () => {
@@ -58,12 +68,37 @@ describe('cursor agent command', () => {
     const previous = process.env.VITEST
     delete process.env.VITEST
     try {
-      expect(resolveCursorCommandOverride(null)).toBe(CURSOR_IDE_AGENT_LAUNCH)
+      expect(resolveCursorCommandOverride(null)).toBe(resolveDefaultCursorLaunchCommand())
     } finally {
       if (previous === undefined) {
         delete process.env.VITEST
       } else {
         process.env.VITEST = previous
+      }
+    }
+  })
+
+  it('defaults to cursor-agent on Windows even when the IDE cursor binary is on PATH', () => {
+    const previousPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
+    const previousLocalAppData = process.env.LOCALAPPDATA
+    delete process.env.LOCALAPPDATA
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    try {
+      expect(resolveDefaultCursorLaunchCommand()).toBe(CURSOR_STANDALONE_AGENT_LAUNCH)
+      expect(
+        suggestCursorIdeCliLaunch({
+          cursorAgentOnPath: true,
+          cursorOnPath: true
+        })
+      ).toBeUndefined()
+    } finally {
+      if (previousPlatform) {
+        Object.defineProperty(process, 'platform', previousPlatform)
+      }
+      if (previousLocalAppData === undefined) {
+        delete process.env.LOCALAPPDATA
+      } else {
+        process.env.LOCALAPPDATA = previousLocalAppData
       }
     }
   })
