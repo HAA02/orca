@@ -21,6 +21,10 @@ pnpm install
 pnpm dev
 ```
 
+Packaging a Windows installer requires an extra native toolchain (Node 24, pnpm
+10.24, Python 3, VS 2022 Build Tools). See
+[`docs/reference/windows-build.md`](../docs/reference/windows-build.md).
+
 ## Branch Naming
 
 Use a clear, descriptive branch name that reflects the change.
