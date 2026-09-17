@@ -53,7 +53,8 @@
         "resourceUsageToggleDescription": "Show the Resource Manager. Click it for CPU, memory, sessions, daemon controls, and workspace disk scans.",
         "portsToggleDescription": "Show live workspace ports. Click it for workspace-scoped ports and external listeners.",
         "antigravityToggleDescription": "Show Antigravity subscription usage for the active workspace.",
-        "grokToggleDescription": "Show Grok subscription credit usage when signed in via Grok CLI."
+        "grokToggleDescription": "Show Grok subscription credit usage when signed in via Grok CLI.",
+        "cursorToggleDescription": "Show Cursor plan usage for the billing cycle."
       },
       "menuBarIcon": {
         "title": "Show Menu Bar Icon",
@@ -473,7 +474,8 @@
             "9e37a5b1b3": "Run independent work in parallel",
             "bddc4c09b8": "Run a phased workflow",
             "ab0e9803b7": "Hand off to another worktree",
-            "5e0d489fe1": "Hand off an active task"
+            "5e0d489fe1": "Hand off an active task",
+            "mixedProviderTeam": "Run a mixed-provider team in one worktree"
           }
         }
       },
@@ -1269,7 +1271,17 @@
         "noRunTargets": "No run targets are ready for this project.",
         "perWorkspaceEnvHint": "Provision an on-demand environment from a recipe",
         "branchName": "Branch name",
-        "branchNamePlaceholder": "feature/my-branch"
+        "branchNamePlaceholder": "feature/my-branch",
+        "connectTimedOut": "Connection timed out. It may still be connecting in the background.",
+        "connectingHost": "Connecting…",
+        "connectHost": "Connect",
+        "addHost": "Add host",
+        "addHostHint": "Register another machine or Orca server",
+        "addSshHost": "Add SSH host",
+        "addSshHostHint": "Use an existing machine over SSH",
+        "addRemoteOrcaServer": "Add Remote Orca Server",
+        "addRemoteOrcaServerHint": "Pair another Orca runtime",
+        "hostConnectionFailed": "Connection failed"
       },
       "NewWorkspaceComposerModal": {
         "createWorktree": "Create worktree",
@@ -4549,7 +4561,14 @@
           "worktree": {
             "flow": {
               "c460fecc4a": "Failed to sleep some workspaces",
-              "8bc3fc0671": "Failed to sleep workspace"
+              "8bc3fc0671": "Failed to sleep workspace",
+              "legacy": {
+                "unverified": "The older host runtime could not confirm terminal shutdown. The workspace was kept open; update the host and try again."
+              },
+              "host": {
+                "unverified": "The host could not confirm terminal shutdown. The workspace was kept open; check the connection and try again."
+              },
+              "retry": "The workspace was kept open. Try again; if the problem continues, check the host connection."
             }
           }
         },
@@ -4816,7 +4835,8 @@
           "sshImportSynced": "Synced {{value0}} host{{value1}}.",
           "sshImportFailed": "Failed to import SSH config.",
           "importing": "Importing...",
-          "importSshConfig": "Import ~/.ssh/config"
+          "importSshConfig": "Import ~/.ssh/config",
+          "advanced": "Advanced"
         },
         "ForgetSshWorkspaceDialog": {
           "reconnectFailed": "Reconnection failed",
@@ -7204,7 +7224,11 @@
             "d2c6a0e8f1": "grok",
             "c1b5f9d7e0": "xai",
             "b0a4e8c6d9": "oauth",
-            "a9f3d7b5c8": "login"
+            "a9f3d7b5c8": "login",
+            "c8a1b2d3e4": "Cursor Accounts",
+            "d9b2c3e4f5": "Uses your Cursor IDE / cursor agent login for launching Cursor in Orca.",
+            "f6d1e8a3b2": "Cursor Usage Cookie",
+            "a7e2f9b4c3": "Paste your cursor.com session cookie to track plan usage in the status bar."
           }
         },
         "advanced": {
@@ -7431,7 +7455,9 @@
             "d6c0a9e2f4": "grok",
             "c5b9f8d1e3": "xai",
             "usagePercentageDisplayTitle": "Usage percentages",
-            "usagePercentageDisplayDescription": "Choose whether provider limits show the percentage used or remaining."
+            "usagePercentageDisplayDescription": "Choose whether provider limits show the percentage used or remaining.",
+            "a1f4c7e2b9": "Cursor Usage",
+            "b2e5d8f3c1": "Show Cursor plan usage from your cursor.com session cookie."
           }
         },
         "auto": {
@@ -9290,6 +9316,43 @@
           "title": "Editor Font Family",
           "description": "Font used by file editors and diff views. Leave empty to follow the terminal font.",
           "placeholder": "Same as terminal font"
+        },
+        "CursorAccountsSection": {
+          "b2c3d4e5f6": "Signed in",
+          "a1b2c3d4e5": "Cursor",
+          "f6e5d4c3b2": "Uses your Cursor IDE / cursor agent login (~/.cursor/cli-config.json). Orca does not store a separate Cursor password.",
+          "0d8e77bc40": "Cursor CLI docs",
+          "ad47a33f72": "Loading…",
+          "c3d4e5f6a7": "Signed in with CURSOR_API_KEY / CURSOR_AUTH_TOKEN in the environment.",
+          "b36fa2c908": "Signed in. Orca reads Cursor CLI auth stored on disk.",
+          "e5f6a7b8c9": "Not signed in to Cursor CLI",
+          "f6a7b8c9d0": "In a terminal, run cursor agent login, then click Refresh status here.",
+          "a9b0c1d2e3": "Install Cursor IDE (or cursor-agent), then run cursor agent login in a terminal.",
+          "3325d996cb": "Refresh status",
+          "a8f3e2c1b4": "API key",
+          "b7e2d9f0a3": "Cursor IDE login",
+          "usageCookieTitle": "Cursor Usage Cookie",
+          "usageCookieDescription": "Paste your cursor.com session cookie to track plan usage and limits in the status bar.",
+          "usageCookieLabel": "Cursor session cookie",
+          "usageCookiePlaceholder": "WorkosCursorSessionToken=…",
+          "usageCookieHint": "Find it in your browser DevTools → Application → Cookies → cursor.com → WorkosCursorSessionToken. Orca sends only this cookie when fetching usage."
+        },
+        "TeammatePresetsSection": {
+          "title": "Named teammates",
+          "description": "Type @grok-high or @mixed-team in native chat to spawn Cursor/OpenCode/Codex workers. The lead does not do that work.",
+          "header": "Native chat teammates",
+          "headerDescription": "Aliases are stored in Orca settings, not Hermes yaml.",
+          "maxConcurrent": "Max concurrent teammates",
+          "maxConcurrentDescription": "Caps same-worktree @mention workers. Default 5.",
+          "fallback": "Fall back to OpenCode if Cursor fails to start",
+          "fallbackDescription": "Closes the failed pane and retries with your OpenCode default model.",
+          "add": "Add bot",
+          "roster": "Roster {{token}} launches {{roles}}.",
+          "id": "Bot id",
+          "label": "Label",
+          "agent": "Agent",
+          "model": "Model",
+          "removeBot": "Remove bot"
         }
       },
       "right": {
@@ -13487,6 +13550,16 @@
         "locked": "Input is held by another device.",
         "placeholder": "Send a message…",
         "mentionHint": "Referencing file:",
+        "teammates": "Teammates",
+        "teammateAgent": "Agent",
+        "noTeammates": "No matching teammates",
+        "teammateDelegated": "Delegated to {{token}}",
+        "teammateLaunchFailed": "Could not start teammate {{token}}",
+        "teammateUnknownAgent": "Unknown teammate agent",
+        "teammateMissingWorktree": "Could not find this chat's worktree",
+        "teammateBusy": "Already running {{limit}} teammates",
+        "teammatePreset": "Named bot",
+        "teammateRoster": "Team roster",
         "attach": "Attach file",
         "startDictation": "Start dictation",
         "stopDictation": "Stop dictation",

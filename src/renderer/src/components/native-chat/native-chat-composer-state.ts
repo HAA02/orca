@@ -12,6 +12,11 @@ import {
   type NativeChatPickerItem,
   type NativeChatSkillDiscoverySnapshot
 } from './native-chat-picker-items'
+import {
+  filterTeammateMentions,
+  isFileLikeMentionQuery,
+  type TeammateMentionOption
+} from '../../../../shared/native-chat-teammate-mention'
 
 export type { SlashCommandSuggestion }
 export { filterSlashCommands, isSlashCommandDraft, applySlashSuggestion, slashCommandDispatchText }
@@ -41,7 +46,7 @@ type PickerAutocomplete = {
 export type ComposerAutocomplete =
   | { mode: 'none' }
   | ({ mode: 'slash' } & PickerAutocomplete)
-  | { mode: 'mention'; query: string }
+  | { mode: 'mention'; query: string; teammates: TeammateMentionOption[]; triggerKey: string }
   | ({ mode: 'skill' } & PickerAutocomplete)
 
 const EMPTY_DISCOVERY: NativeChatSkillDiscoverySnapshot = { status: 'ready', skills: [] }
@@ -53,7 +58,8 @@ export function deriveComposerAutocomplete(
   skills: readonly DiscoveredSkill[] = [],
   profile: NativeChatAgentProfile | null = null,
   discovery: NativeChatSkillDiscoverySnapshot = { ...EMPTY_DISCOVERY, skills },
-  dismissedTriggerKey: string | null = null
+  dismissedTriggerKey: string | null = null,
+  teammateOptions: readonly TeammateMentionOption[] = []
 ): ComposerAutocomplete {
   const before = draft.slice(0, caret)
   if (before.startsWith('/') && !/\s/.test(before)) {
@@ -61,7 +67,15 @@ export function deriveComposerAutocomplete(
   }
   const mentionMatch = before.match(/(?:^|\s)@(\S*)$/)
   if (mentionMatch) {
-    return { mode: 'mention', query: mentionMatch[1] }
+    const query = mentionMatch[1]
+    const triggerKey = `@:${before.length - query.length - 1}`
+    if (dismissedTriggerKey === triggerKey) {
+      return { mode: 'none' }
+    }
+    const teammates = isFileLikeMentionQuery(query)
+      ? []
+      : filterTeammateMentions(teammateOptions, query)
+    return { mode: 'mention', query, teammates, triggerKey }
   }
   const skillMatch =
     profile?.skillPrefix === '$' || (!profile && skills.length > 0)

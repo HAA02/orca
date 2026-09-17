@@ -46,12 +46,14 @@ import {
   getAccountsCodexSearchEntries,
   getAccountsGeminiSearchEntries,
   getAccountsLocationSearchEntries,
+  getAccountsCursorSearchEntries,
   getAccountsGrokSearchEntries,
   getAccountsMiniMaxSearchEntries,
   getAccountsOpencodeSearchEntries,
   getAccountsPaneSearchEntries
 } from './accounts-search'
 import { GrokAccountsSection } from './GrokAccountsSection'
+import { CursorAccountsSection } from './CursorAccountsSection'
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsRow, SettingsSegmentedControl } from './SettingsFormControls'
 import { matchesSettingsSearch } from './settings-search'
@@ -1478,6 +1480,13 @@ export function AccountsPane({
           </button>
         </SearchableSetting>
       </section>
+    ) : null,
+    matchesSettingsSearch(searchQuery, getAccountsCursorSearchEntries()) ? (
+      <CursorAccountsSection
+        key="cursor"
+        sessionCookie={settings.cursorSessionCookie}
+        updateSettings={updateSettings}
+      />
     ) : null,
     matchesSettingsSearch(searchQuery, getAccountsOpencodeSearchEntries()) ? (
       <section key="opencode-go" id="accounts-opencode-go" className="space-y-4 scroll-mt-6">

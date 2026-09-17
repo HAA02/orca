@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ManagedPane } from '@/lib/pane-manager/pane-manager'
 import { buildAgentSessionContinuationPrompt } from '@/lib/agent-session-continuation'
-import { prepareAgentSessionContinuationFromPane } from './terminal-agent-session-continuation'
+import {
+  continueAgentSessionFromPane,
+  prepareAgentSessionContinuationFromPane
+} from './terminal-agent-session-continuation'
 
 const LEAF_ID = '11111111-1111-4111-8111-111111111111'
 const store = {
@@ -121,6 +124,52 @@ describe('prepareAgentSessionContinuationFromPane', () => {
     expect(request?.source).toMatchObject({
       capturedText: 'latest terminal context',
       transcriptPath: null
+    })
+  })
+})
+
+describe('continueAgentSessionFromPane', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.agentStatusByPaneKey = {
+      [`tab-1:${LEAF_ID}`]: {
+        agentType: 'claude',
+        providerSession: { transcriptPath: '/home/u/.claude/session.jsonl' }
+      }
+    }
+    store.tabsByWorktree = { 'wt-1': [{ id: 'tab-1', launchAgent: 'claude' }] }
+  })
+
+  it('prefers the pane cwd over the workspace fallback', () => {
+    const pane = { ...makePane('unused scrollback'), id: 7 } as unknown as ManagedPane
+
+    const request = continueAgentSessionFromPane({
+      pane,
+      paneCwdMap: new Map([[7, { cwd: '/repo/worktree/packages/app' }]]),
+      tabId: 'tab-1',
+      worktreeId: 'wt-1',
+      groupId: null,
+      workspacePath: '/repo/worktree'
+    })
+
+    expect(request).toMatchObject({ initialCwd: '/repo/worktree/packages/app' })
+  })
+
+  it('falls back to the workspace path when the pane cwd is unknown', () => {
+    const pane = { ...makePane('unused scrollback'), id: 7 } as unknown as ManagedPane
+
+    const request = continueAgentSessionFromPane({
+      pane,
+      paneCwdMap: new Map(),
+      tabId: 'tab-1',
+      worktreeId: 'wt-1',
+      groupId: null,
+      workspacePath: '/repo/worktree'
+    })
+
+    expect(request).toMatchObject({
+      initialCwd: '/repo/worktree',
+      source: { sourceWorkingDirectory: '/repo/worktree' }
     })
   })
 })

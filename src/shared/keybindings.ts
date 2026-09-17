@@ -933,7 +933,13 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
     group: 'Terminal Panes',
     scope: 'terminal',
     searchKeywords: ['shortcut', 'pane', 'clear'],
-    defaultBindings: platformBindings(['Mod+K'])
+    // Why: Ctrl+K is readline kill-to-end-of-line on the shells Orca runs on
+    // Linux/Windows, so keep the app chord off it there; macOS ⌘K stays.
+    defaultBindings: {
+      darwin: ['Mod+K'],
+      linux: ['Mod+Shift+K'],
+      win32: ['Mod+Shift+K']
+    }
   },
   {
     id: 'terminal.focusNextPane',

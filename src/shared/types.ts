@@ -43,6 +43,7 @@ import type {
 import type { UsagePercentageDisplay } from './usage-percentage-display'
 import type { StatusBarUsageMode } from './status-bar-usage-mode'
 import type { PersistedNativeChatSessionOptions } from './native-chat-session-options'
+import type { NativeChatTeammateSettings } from './native-chat-teammate-presets'
 
 // Re-exported for backward compat with renderer call sites that import
 // `WorkspaceCreateTelemetrySource` from '../../../shared/types'.
@@ -2736,6 +2737,8 @@ export type GlobalSettings = {
   openAgentTabsInChatByDefault?: boolean
   /** Experimental native chat surface for Claude/Codex sessions; off by default. */
   experimentalNativeChat?: boolean
+  /** Named @mention bots, mixed-provider rosters, and teammate concurrency. */
+  nativeChatTeammate?: NativeChatTeammateSettings
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
   nativeChatSessionOptions?: PersistedNativeChatSessionOptions
   /** Extra launcher rows for the worktree "Open in" submenu. VS Code is always shown first. */
@@ -2838,6 +2841,8 @@ export type GlobalSettings = {
   defaultLinearTeamSelection: string[] | null
   /** Session cookie for OpenCode Go rate-limit fetching. Stored encrypted. */
   opencodeSessionCookie: string
+  /** cursor.com WorkosCursorSessionToken cookie for Cursor usage fetching. Stored encrypted. */
+  cursorSessionCookie: string
   /** Optional OpenCode Go workspace ID override; when set, skips the workspaces lookup and fetches usage directly. */
   opencodeWorkspaceId: string
   /** Optional MiniMax group id. When empty, the usage fetcher extracts minimax_group_id_v2 from the cookie. */
@@ -3136,6 +3141,7 @@ export type StatusBarItem =
   | 'kimi'
   | 'minimax'
   | 'grok'
+  | 'cursor'
   | 'ssh'
   | 'resource-usage'
   | 'ports'
@@ -3258,6 +3264,8 @@ export type PersistedUIState = {
   _antigravityStatusBarDefaultAdded?: boolean
   /** One-shot migration flag for adding the default-on Grok status item. */
   _grokStatusBarDefaultAdded?: boolean
+  /** One-shot migration flag for adding the default-on Cursor status item. */
+  _cursorStatusBarDefaultAdded?: boolean
   statusBarItems: StatusBarItem[]
   statusBarVisible: boolean
   /** Why: this is client-side presentation, not a provider/account or execution-host setting. */

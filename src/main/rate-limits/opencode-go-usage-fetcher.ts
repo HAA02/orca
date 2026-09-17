@@ -51,19 +51,51 @@ function filterAuthCookie(raw: string): string {
 }
 
 function parseWorkspaceIds(text: string): string[] {
-  // Match id:"wrk_..." or id: "wrk_..." patterns in JS-serialized output.
-  // Why: Workspace IDs follow a 'wrk_xxx' or 'wk_xxx' pattern. Using a
-  // more specific regex with word boundaries avoids picking up unrelated
-  // object properties that might match a generic ID pattern.
+  // Why: Workspace IDs follow a 'wrk_xxx' or 'wk_xxx' pattern, but the wire
+  // format that carries them changes (quoted literal, `id:"wrk_…"` field, or a
+  // /workspace/<id> URL). Accept every known shape so a provider-side format
+  // change cannot silently drop discovery.
   const ids: string[] = []
-  const workspaceIdRegex = /\bid\s*:\s*["']((?:wrk|wk)_[a-zA-Z0-9]+)["']/g
-  for (const match of text.matchAll(workspaceIdRegex)) {
-    const id = match[1]
-    if (id && !ids.includes(id)) {
-      ids.push(id)
+  const patterns = [
+    /["']((?:wrk|wk)_[a-zA-Z0-9]+)["']/g,
+    /\/workspace\/((?:wrk|wk)_[a-zA-Z0-9]+)(?:[/"'?#]|$)/g
+  ]
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const id = match[1]
+      if (id && !ids.includes(id)) {
+        ids.push(id)
+      }
     }
   }
   return ids
+}
+
+/**
+ * Fallback discovery when the server-function payload no longer carries an id:
+ * a signed-in visit to /workspace lands on the user's workspace URL, so either
+ * the final response URL or the rendered page exposes the identifier.
+ */
+async function discoverWorkspaceIdsFromWorkspacePage(cookieHeader: string): Promise<string[]> {
+  const res = await net.fetch(`${OPENCODE_BASE_URL}/workspace`, {
+    method: 'GET',
+    headers: {
+      Cookie: cookieHeader,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      Origin: OPENCODE_BASE_URL,
+      Referer: OPENCODE_BASE_URL
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(API_TIMEOUT_MS)
+  })
+  if (!res?.ok) {
+    return []
+  }
+  const fromFinalUrl = typeof res.url === 'string' ? parseWorkspaceIds(res.url) : []
+  if (fromFinalUrl.length > 0) {
+    return fromFinalUrl
+  }
+  return parseWorkspaceIds(await res.text())
 }
 
 function makeWindow(
@@ -173,6 +205,16 @@ export async function fetchOpenCodeGoRateLimits(
         error: message,
         status: 'error'
       }
+    }
+  }
+
+  if (ids.length === 0 && !override) {
+    try {
+      // Why: best-effort second source; the actionable override error below
+      // still applies when this fails.
+      ids = await discoverWorkspaceIdsFromWorkspacePage(cookieHeader)
+    } catch {
+      // Ignore — fall through to the override guidance.
     }
   }
 

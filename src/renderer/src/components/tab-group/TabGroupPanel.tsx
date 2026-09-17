@@ -114,6 +114,7 @@ export default function TabGroupPanel({
       onSetCustomTitle={commands.setTabCustomTitle}
       onSetTabColor={commands.setTabColor}
       onTogglePaneExpand={commands.toggleTerminalPaneExpand}
+      onContinueAgentSession={commands.continueAgentSession}
       editorFiles={editorItems}
       browserTabs={browserItems}
       activeFileId={

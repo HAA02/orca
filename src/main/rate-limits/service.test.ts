@@ -12,6 +12,7 @@ import { fetchGeminiRateLimits } from './gemini-usage-fetcher'
 import { fetchKimiRateLimits } from './kimi-fetcher'
 import { fetchMiniMaxRateLimits } from './minimax-fetcher'
 import { fetchGrokRateLimits } from './grok-fetcher'
+import { fetchCursorRateLimits } from './cursor-usage-fetcher'
 import { readGrokAuthSession } from './grok-auth'
 import { fetchOpenCodeGoRateLimits } from './opencode-go-usage-fetcher'
 import { hasMiniMaxSessionCookie } from '../minimax/minimax-cookie-store'
@@ -43,6 +44,10 @@ vi.mock('./minimax-fetcher', () => ({
 
 vi.mock('./grok-fetcher', () => ({
   fetchGrokRateLimits: vi.fn()
+}))
+
+vi.mock('./cursor-usage-fetcher', () => ({
+  fetchCursorRateLimits: vi.fn()
 }))
 
 vi.mock('./grok-auth', () => ({
@@ -131,6 +136,7 @@ function mockFreshBackgroundProviderFetches(): void {
   vi.mocked(fetchKimiRateLimits).mockImplementation(async () => okProvider('kimi', 0))
   vi.mocked(fetchMiniMaxRateLimits).mockImplementation(async () => okProvider('minimax', 0))
   vi.mocked(fetchGrokRateLimits).mockImplementation(async () => unavailableProvider('grok'))
+  vi.mocked(fetchCursorRateLimits).mockImplementation(async () => unavailableProvider('cursor'))
 }
 
 function serviceInternals(service: RateLimitService): { fetchAll: () => Promise<void> } {
@@ -184,8 +190,38 @@ describe('RateLimitService', () => {
       error: null,
       status: 'unavailable'
     })
+    vi.mocked(fetchCursorRateLimits).mockResolvedValue(unavailableProvider('cursor'))
     vi.mocked(hasMiniMaxSessionCookie).mockReturnValue(false)
     vi.mocked(readGrokAuthSession).mockReturnValue({ status: 'missing' })
+  })
+
+  it('fetches Cursor usage with the configured cookie and exposes the snapshot', async () => {
+    vi.mocked(fetchClaudeRateLimits).mockResolvedValue(okProvider('claude', 10, Date.now()))
+    vi.mocked(fetchCodexRateLimits).mockResolvedValue(okProvider('codex', 20, Date.now()))
+    vi.mocked(fetchCursorRateLimits).mockResolvedValue({
+      provider: 'cursor',
+      session: null,
+      weekly: null,
+      monthly: {
+        usedPercent: 42,
+        windowMinutes: 43200,
+        resetsAt: null,
+        resetDescription: null
+      },
+      planType: 'pro',
+      updatedAt: Date.now(),
+      error: null,
+      status: 'ok'
+    })
+    const service = new RateLimitService()
+    service.setCursorConfigResolver(() => ({ sessionCookie: 'WorkosCursorSessionToken=abc' }))
+
+    await service.refresh()
+
+    expect(fetchCursorRateLimits).toHaveBeenCalledWith('WorkosCursorSessionToken=abc')
+    expect(service.getState().cursor?.status).toBe('ok')
+    expect(service.getState().cursor?.monthly?.usedPercent).toBe(42)
+    expect(service.getState().cursor?.planType).toBe('pro')
   })
 
   it('does not reread Grok auth when callers read state snapshots', () => {

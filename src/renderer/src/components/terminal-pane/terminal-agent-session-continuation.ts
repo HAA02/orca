@@ -85,3 +85,36 @@ export function prepareAgentSessionContinuationFromPane({
     launchSource: 'terminal_context_menu'
   }
 }
+
+type ContinueAgentSessionFromPaneArgs = {
+  pane: ManagedPane
+  paneCwdMap: ReadonlyMap<number, { cwd: string }>
+  tabId: string
+  worktreeId: string
+  groupId: string | null
+  workspacePath: string
+}
+
+/**
+ * Resolve the pane's live cwd and prepare the handoff.
+ *
+ * Why: the tab-bar "+" entry point has no pane-cwd state of its own, so both it
+ * and the pane context menu must resolve cwd the same way.
+ */
+export function continueAgentSessionFromPane({
+  pane,
+  paneCwdMap,
+  tabId,
+  worktreeId,
+  groupId,
+  workspacePath
+}: ContinueAgentSessionFromPaneArgs): AgentSessionContinuationRequest | null {
+  return prepareAgentSessionContinuationFromPane({
+    pane,
+    tabId,
+    worktreeId,
+    groupId,
+    workspacePath,
+    initialCwd: paneCwdMap.get(pane.id)?.cwd || workspacePath
+  })
+}

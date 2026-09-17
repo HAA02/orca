@@ -44,6 +44,13 @@ describe('agent process recognition', () => {
     expect(isExpectedAgentProcess('powershell.exe', 'claude')).toBe(false)
   })
 
+  it('treats cursor and cursor-agent as the same expected CLI', () => {
+    expect(isExpectedAgentProcess('cursor-agent', 'cursor')).toBe(true)
+    expect(isExpectedAgentProcess('/usr/bin/cursor', 'cursor-agent')).toBe(true)
+    expect(isExpectedAgentProcess('cursor-agent', 'cursor-agent')).toBe(true)
+    expect(isExpectedAgentProcess('cursor', 'codex')).toBe(false)
+  })
+
   it('does not recognize Claude print-mode hook subprocesses as interactive agents', () => {
     expect(
       recognizeAgentProcessFromCommandLine(

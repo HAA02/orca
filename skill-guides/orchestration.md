@@ -237,6 +237,12 @@ Wait for `tui-idle` before dispatching. Always pass `--timeout-ms`; real coding 
 - Treat preambles inherited through terminal history or full handoffs as stale unless the current prompt explicitly keeps that coordinator in the loop.
 - Coordinators should use `task-list --ready` as external memory, dispatch parallel waves, and avoid dependency chains deeper than 3-4 steps.
 
+## Mixed-provider native chat teammates
+
+Group addresses `@cursor`, `@opencode`, `@codex`, `@claude` fan out mail to live panes. They do not create workers.
+
+Native Chat `@cursor/model`, `@opencode/model`, `@codex/model`, `@claude`, `@gemini`, `@pi`, named bots (`@grok-high`), and `@mixed-team` spawn a same-worktree teammate. The lead does not execute that instruction. Orca launches the CLI with `--model`, injects lead context via `task-create` + `dispatch --inject`, shows `worker_done` as a lead native-chat bubble, caps concurrent workers at 5, and falls back to OpenCode if Cursor fails to start.
+
 ## Example
 
 ```bash

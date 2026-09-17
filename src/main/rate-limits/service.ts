@@ -24,6 +24,7 @@ import { fetchKimiRateLimits } from './kimi-fetcher'
 import { fetchGrokRateLimits } from './grok-fetcher'
 import { readGrokAuthSession } from './grok-auth'
 import { hasMiniMaxSessionCookie } from '../minimax/minimax-cookie-store'
+import { fetchCursorRateLimits } from './cursor-usage-fetcher'
 import { fetchMiniMaxRateLimits } from './minimax-fetcher'
 import { fetchOpenCodeGoRateLimits } from './opencode-go-usage-fetcher'
 import {
@@ -45,6 +46,10 @@ type ClaudeAuthPreparationResolver = (
 type OpenCodeGoRateLimitConfig = {
   sessionCookie: string
   workspaceIdOverride: string
+}
+
+type CursorRateLimitConfig = {
+  sessionCookie: string
 }
 
 type MiniMaxRateLimitConfig = {
@@ -102,6 +107,7 @@ type InternalRateLimitState = {
   antigravity: ProviderRateLimits | null
   minimax: ProviderRateLimits | null
   grok: ProviderRateLimits | null
+  cursor: ProviderRateLimits | null
 }
 
 function normalizePollingInterval(ms: number): number {
@@ -151,7 +157,8 @@ export class RateLimitService {
     kimi: null,
     antigravity: null,
     minimax: null,
-    grok: null
+    grok: null,
+    cursor: null
   }
   private grokAuthConfigured = readGrokAuthSession().status === 'ok'
   private pollInterval: number = DEFAULT_POLL_MS
@@ -166,7 +173,8 @@ export class RateLimitService {
     kimi: 0,
     minimax: 0,
     grok: 0,
-    antigravity: 0
+    antigravity: 0,
+    cursor: 0
   }
   // Why: consecutive failures drive exponential backoff of the fast activation-retry lane; reset on any success/unavailable result.
   private activeFailureStreakByProvider: Record<ActiveRateLimitProvider, number> = {
@@ -177,7 +185,8 @@ export class RateLimitService {
     kimi: 0,
     minimax: 0,
     grok: 0,
-    antigravity: 0
+    antigravity: 0,
+    cursor: 0
   }
   private mainWindow: BrowserWindow | null = null
   private detachWindowListeners: (() => void) | null = null
@@ -194,8 +203,10 @@ export class RateLimitService {
   private lastClaudeAuthSnapshot: { configDir: string | null; provenance: string } | null = null
   private opencodeFetchGeneration = 0
   private minimaxFetchGeneration = 0
+  private cursorFetchGeneration = 0
   private lastOpencodeConfigHash = ''
   private lastMiniMaxConfigHash = ''
+  private lastCursorConfigHash = ''
   private codexHomePathResolver: CodexHomePathResolver | null = null
   private codexFetchTarget: NormalizedCodexAccountSelectionTarget = {
     runtime: 'host',
@@ -208,6 +219,7 @@ export class RateLimitService {
   }
   private openCodeGoConfigResolver: (() => OpenCodeGoRateLimitConfig) | null = null
   private miniMaxConfigResolver: (() => MiniMaxRateLimitConfig) | null = null
+  private cursorConfigResolver: (() => CursorRateLimitConfig) | null = null
   private geminiCliOAuthEnabledResolver: GeminiCliOAuthEnabledResolver | null = null
   private inactiveClaudeAccountsResolver: (() => InactiveClaudeAccountInfo[]) | null = null
   private inactiveCodexAccountsResolver: (() => InactiveCodexAccountInfo[]) | null = null
@@ -253,6 +265,10 @@ export class RateLimitService {
 
   setMiniMaxConfigResolver(resolver: () => MiniMaxRateLimitConfig): void {
     this.miniMaxConfigResolver = resolver
+  }
+
+  setCursorConfigResolver(resolver: () => CursorRateLimitConfig): void {
+    this.cursorConfigResolver = resolver
   }
 
   setGeminiCliOAuthEnabledResolver(resolver: GeminiCliOAuthEnabledResolver): void {
@@ -766,7 +782,8 @@ export class RateLimitService {
       kimi: this.state.kimi,
       minimax: this.state.minimax,
       grok: this.state.grok,
-      antigravity: this.state.antigravity
+      antigravity: this.state.antigravity,
+      cursor: this.state.cursor
     }
     return Object.entries(byProvider).map(([provider, limits]) => ({
       provider: provider as ActiveRateLimitProvider,
@@ -1422,6 +1439,7 @@ export class RateLimitService {
       | 'minimax'
       | 'grok'
       | 'antigravity'
+      | 'cursor'
   ): ProviderRateLimits {
     if (!current) {
       return {
@@ -1490,6 +1508,15 @@ export class RateLimitService {
     }
     const miniMaxGeneration = this.minimaxFetchGeneration
 
+    const cursorCookie = this.cursorConfigResolver?.().sessionCookie ?? ''
+    const currentCursorConfigHash = cursorCookie
+    const cursorConfigChanged = currentCursorConfigHash !== this.lastCursorConfigHash
+    if (cursorConfigChanged) {
+      this.lastCursorConfigHash = currentCursorConfigHash
+      this.cursorFetchGeneration += 1
+    }
+    const cursorGeneration = this.cursorFetchGeneration
+
     // Mark all providers fetching while keeping previous data visible (Codex is cleared separately on account change).
     this.updateState({
       ...previousState,
@@ -1504,7 +1531,10 @@ export class RateLimitService {
       minimax: miniMaxConfigChanged
         ? this.withFetchingStatus(null, 'minimax')
         : this.withFetchingStatus(previousState.minimax, 'minimax'),
-      grok: this.withFetchingStatus(previousState.grok, 'grok')
+      grok: this.withFetchingStatus(previousState.grok, 'grok'),
+      cursor: cursorConfigChanged
+        ? this.withFetchingStatus(null, 'cursor')
+        : this.withFetchingStatus(previousState.cursor, 'cursor')
     })
 
     const missingWslCodexHome = codexHomePath
@@ -1522,34 +1552,42 @@ export class RateLimitService {
     const claudeFetchGated =
       !options?.force && this.shouldSkipAutomatedClaudeFetch(previousState.claude)
 
-    const [claudeResult, codexResult, geminiResult, opencodeGoResult, kimiResult, miniMaxResult] =
-      await Promise.allSettled([
-        claudeFetchGated
-          ? Promise.resolve(previousState.claude as ProviderRateLimits)
-          : fetchClaudeRateLimits({
-              authPreparation: claudeAuthPreparation,
-              allowPtyFallback: this.shouldAllowClaudePtyFallback(claudeAuthPreparation),
-              allowUsagePanelSupplement: this.shouldAllowClaudeUsagePanelSupplement(),
-              networkProxySettings: this.networkProxySettingsResolver?.(),
-              signal
-            }),
-        missingWslCodexHome ??
-          fetchCodexRateLimits({
-            codexHomePath,
-            allowPtyFallback: this.shouldAllowCodexPtyFallback(),
+    const [
+      claudeResult,
+      codexResult,
+      geminiResult,
+      opencodeGoResult,
+      kimiResult,
+      miniMaxResult,
+      cursorResult
+    ] = await Promise.allSettled([
+      claudeFetchGated
+        ? Promise.resolve(previousState.claude as ProviderRateLimits)
+        : fetchClaudeRateLimits({
+            authPreparation: claudeAuthPreparation,
+            allowPtyFallback: this.shouldAllowClaudePtyFallback(claudeAuthPreparation),
+            allowUsagePanelSupplement: this.shouldAllowClaudeUsagePanelSupplement(),
+            networkProxySettings: this.networkProxySettingsResolver?.(),
             signal
           }),
-        fetchGeminiRateLimits(geminiCliOAuthEnabled),
-        fetchOpenCodeGoRateLimits(cookie, workspaceIdOverride || undefined),
-        fetchKimiRateLimits(),
-        miniMaxConfigResult.error
-          ? Promise.resolve(this.getMiniMaxCredentialError(miniMaxConfigResult.error))
-          : fetchMiniMaxRateLimits({
-              cookie: miniMaxCookie,
-              groupId: miniMaxGroupId,
-              models: miniMaxModels
-            })
-      ])
+      missingWslCodexHome ??
+        fetchCodexRateLimits({
+          codexHomePath,
+          allowPtyFallback: this.shouldAllowCodexPtyFallback(),
+          signal
+        }),
+      fetchGeminiRateLimits(geminiCliOAuthEnabled),
+      fetchOpenCodeGoRateLimits(cookie, workspaceIdOverride || undefined),
+      fetchKimiRateLimits(),
+      miniMaxConfigResult.error
+        ? Promise.resolve(this.getMiniMaxCredentialError(miniMaxConfigResult.error))
+        : fetchMiniMaxRateLimits({
+            cookie: miniMaxCookie,
+            groupId: miniMaxGroupId,
+            models: miniMaxModels
+          }),
+      fetchCursorRateLimits(cursorCookie)
+    ])
 
     if (signal.aborted) {
       return
@@ -1643,6 +1681,20 @@ export class RateLimitService {
             status: 'error'
           } satisfies ProviderRateLimits)
 
+    const cursor =
+      cursorResult.status === 'fulfilled'
+        ? cursorResult.value
+        : ({
+            provider: 'cursor',
+            session: null,
+            weekly: null,
+            monthly: null,
+            updatedAt: Date.now(),
+            error:
+              cursorResult.reason instanceof Error ? cursorResult.reason.message : 'Unknown error',
+            status: 'error'
+          } satisfies ProviderRateLimits)
+
     const latestCodexHomePath = this.codexHomePathResolver?.(codexTarget) ?? null
     const latestClaudeAuthPreparation = await this.claudeAuthPreparationResolver?.(claudeTarget)
     if (signal.aborted) {
@@ -1660,6 +1712,7 @@ export class RateLimitService {
       this.isSameClaudeTarget(claudeTarget, this.claudeFetchTarget)
     const shouldApplyOpencode = opencodeGeneration === this.opencodeFetchGeneration
     const shouldApplyMiniMax = miniMaxGeneration === this.minimaxFetchGeneration
+    const shouldApplyCursor = cursorGeneration === this.cursorFetchGeneration
 
     if (shouldApplyClaude) {
       this.trackActiveFailureStreak('claude', claude)
@@ -1675,6 +1728,9 @@ export class RateLimitService {
     this.trackActiveFailureStreak('kimi', kimi)
     if (shouldApplyMiniMax) {
       this.trackActiveFailureStreak('minimax', miniMax)
+    }
+    if (shouldApplyCursor) {
+      this.trackActiveFailureStreak('cursor', cursor)
     }
 
     // Why: apply a Codex result only when provenance and generation still match, else a raced in-flight fetch overwrites the new account.
@@ -1698,7 +1754,12 @@ export class RateLimitService {
         ? miniMaxConfigChanged
           ? miniMax
           : this.applyStalePolicy(miniMax, previousState.minimax)
-        : this.state.minimax
+        : this.state.minimax,
+      cursor: shouldApplyCursor
+        ? cursorConfigChanged
+          ? cursor
+          : this.applyStalePolicy(cursor, previousState.cursor)
+        : this.state.cursor
     })
 
     const grokResult = await grokResultPromise

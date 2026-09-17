@@ -8,6 +8,7 @@ import { NativeChatMessageList } from './NativeChatMessageList'
 import { NativeChatComposer, type NativeChatComposerHandle } from './NativeChatComposer'
 import { useNativeChatFontScale } from './use-native-chat-font-scale'
 import { useNativeChatCanSend } from './use-native-chat-can-send'
+import { useNativeChatTeammateInbox } from './use-native-chat-teammate-inbox'
 import { NativeChatInteractiveCard } from './NativeChatInteractiveCard'
 import { NativeChatEmptyState } from './NativeChatEmptyState'
 import { NativeChatSessionGate } from './NativeChatSessionGate'
@@ -51,6 +52,7 @@ import { resolveNativeChatFileLinkContext } from './native-chat-file-link'
 import { selectNativeChatRuntimeEnvironmentId } from './native-chat-runtime-owner'
 import { useNativeChatPasteBridge } from './use-native-chat-paste-bridge'
 import { useNativeChatFileLinkClick } from './use-native-chat-file-link-click'
+import { excerptNativeChatLeadContext } from '../../../../shared/native-chat-teammate-mention'
 import type { NativeChatViewProps } from './native-chat-view-types'
 
 export type { NativeChatViewProps } from './native-chat-view-types'
@@ -152,6 +154,7 @@ function NativeChatResolvedView({
     (s) => s.agentStatusByPaneKey[paneKey]?.stateStartedAt ?? null
   )
   const canSend = useNativeChatCanSend(targetPtyId)
+  const teammateInboxMessages = useNativeChatTeammateInbox(paneKey)
   // Reuse the verified composer send path for interactive cards and composer
   // stop (Stop sends ESC, the agent-TUI interrupt key).
   const interactiveSend = useNativeChatInteractiveSend(terminalTabId, paneKey, targetPtyId, agent)
@@ -301,19 +304,26 @@ function NativeChatResolvedView({
     })
   }, [sessionAfterCommandBoundaries.messages, pendingMessages, hookPreview, liveWorking])
   const sessionWithPending = useMemo<typeof session>(() => {
-    if (pending.length === 0 && commandMarkers.length === 0 && !streamingText) {
+    const extras = [
+      ...commandMarkersAsMessages(commandMarkers),
+      ...teammateInboxMessages,
+      ...(streamingText ? [nativeChatStreamingMessage(streamingText)] : []),
+      ...pendingMessages
+    ]
+    if (extras.length === 0) {
       return sessionAfterCommandBoundaries
     }
     return {
       ...sessionAfterCommandBoundaries,
-      messages: [
-        ...sessionAfterCommandBoundaries.messages,
-        ...commandMarkersAsMessages(commandMarkers),
-        ...(streamingText ? [nativeChatStreamingMessage(streamingText)] : []),
-        ...pendingMessages
-      ]
+      messages: [...sessionAfterCommandBoundaries.messages, ...extras]
     }
-  }, [sessionAfterCommandBoundaries, pending, pendingMessages, commandMarkers, streamingText])
+  }, [
+    sessionAfterCommandBoundaries,
+    pendingMessages,
+    commandMarkers,
+    streamingText,
+    teammateInboxMessages
+  ])
   // Derive the view state from the pending-augmented session so a send into an
   // otherwise-empty conversation flips to the list (showing the queued bubble)
   // instead of staying on the empty state.
@@ -442,6 +452,7 @@ function NativeChatResolvedView({
           onSlashCommand={onSlashCommand}
           onSwitchToTerminal={onSwitchToTerminal}
           readTerminalScreen={readTerminalScreen}
+          readLeadContext={() => excerptNativeChatLeadContext(sessionWithPending.messages)}
         />
       )}
       {contextMenu.menu}

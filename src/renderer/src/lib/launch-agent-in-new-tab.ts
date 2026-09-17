@@ -29,6 +29,7 @@ import type { LaunchSource } from '../../../shared/telemetry-events'
 import { translate } from '@/i18n/i18n'
 import { getConnectionIdFromState } from '@/lib/connection-context'
 import { resolveNativeChatSessionOptionDefaults } from '../../../shared/native-chat-session-option-defaults'
+import type { SessionOptionValue } from '../../../shared/native-chat-session-options'
 import { seedNativeChatAppliedSessionOptions } from '@/components/native-chat/native-chat-session-option-cache'
 
 export type LaunchAgentInNewTabArgs = {
@@ -51,6 +52,8 @@ export type LaunchAgentInNewTabArgs = {
   launchPlatform?: NodeJS.Platform
   /** Called after the prompt is actually delivered to the agent input path. */
   onPromptDelivered?: () => void
+  /** Launch-time session flags (e.g. teammate `--model`) that replace persisted defaults. */
+  sessionOptionsOverride?: Record<string, SessionOptionValue>
 }
 
 export type LaunchAgentInNewTabResult = {
@@ -82,7 +85,8 @@ export function launchAgentInNewTab(args: LaunchAgentInNewTabArgs): LaunchAgentI
     launchSource,
     quickCommandLabel,
     launchPlatform,
-    onPromptDelivered
+    onPromptDelivered,
+    sessionOptionsOverride
   } = args
   const store = useAppStore.getState()
   const worktree = store.allWorktrees?.().find((entry: { id: string }) => entry.id === worktreeId)
@@ -118,7 +122,8 @@ export function launchAgentInNewTab(args: LaunchAgentInNewTabArgs): LaunchAgentI
     agentEnv,
     sessionOptions: resolveNativeChatSessionOptionDefaults(
       store.settings?.nativeChatSessionOptions,
-      agent
+      agent,
+      sessionOptionsOverride
     )
   }
   const trimmedPrompt = prompt?.trim() ?? ''

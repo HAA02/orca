@@ -121,15 +121,28 @@ function QuickLaunchAgentMenuItemsInner({
     (agent: TuiAgent) => {
       const entry = getCatalogEntry(agent)
       const label = entry?.label ?? agent
-      const result = launchAgentInNewTab({
-        agent,
-        worktreeId,
-        groupId,
-        ...(prompt !== undefined ? { prompt } : {}),
-        ...(promptDelivery !== undefined ? { promptDelivery } : {}),
-        ...(launchSource !== undefined ? { launchSource } : {}),
-        ...(onPromptDelivered !== undefined ? { onPromptDelivered } : {})
-      })
+      let result: ReturnType<typeof launchAgentInNewTab>
+      try {
+        result = launchAgentInNewTab({
+          agent,
+          worktreeId,
+          groupId,
+          ...(prompt !== undefined ? { prompt } : {}),
+          ...(promptDelivery !== undefined ? { promptDelivery } : {}),
+          ...(launchSource !== undefined ? { launchSource } : {}),
+          ...(onPromptDelivered !== undefined ? { onPromptDelivered } : {})
+        })
+      } catch (error) {
+        console.error('Failed to launch agent from quick-launch menu', error)
+        toast.error(
+          translate(
+            'auto.components.tab.bar.QuickLaunchButton.465e432ef1',
+            'Could not build launch command for {{value0}}.',
+            { value0: label }
+          )
+        )
+        return
+      }
       if (!result) {
         toast.error(
           translate(

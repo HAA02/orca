@@ -7,6 +7,7 @@ import {
   CURSOR_SESSION_OPTION_CATALOG,
   GEMINI_SESSION_OPTION_CATALOG
 } from './agent-session-option-catalog-gemini-cursor'
+import { OPENCODE_SESSION_OPTION_CATALOG } from './agent-session-option-catalog-opencode'
 import type {
   AgentSessionOptionCatalog,
   AgentSessionOptionCatalogMap,
@@ -28,7 +29,8 @@ const CATALOGS: AgentSessionOptionCatalogMap = {
   claude: CLAUDE_SESSION_OPTION_CATALOG,
   codex: CODEX_SESSION_OPTION_CATALOG,
   gemini: GEMINI_SESSION_OPTION_CATALOG,
-  cursor: CURSOR_SESSION_OPTION_CATALOG
+  cursor: CURSOR_SESSION_OPTION_CATALOG,
+  opencode: OPENCODE_SESSION_OPTION_CATALOG
 }
 
 export function getAgentSessionOptionCatalog(agent: AgentType): AgentSessionOptionCatalog | null {
@@ -73,6 +75,25 @@ export function mergeCatalogModels(
     return { ...model, ...live, options: model.options }
   })
   return [...merged, ...discoveredById.values()]
+}
+
+export function mergeCatalogModelsLiveFirst(
+  seed: readonly CatalogModel[],
+  discovered: readonly CatalogModel[]
+): CatalogModel[] {
+  if (discovered.length === 0) {
+    return [...seed]
+  }
+  const seedById = new Map(seed.map((model) => [model.id, model]))
+  const merged = discovered.map((live) => {
+    const cataloged = seedById.get(live.id)
+    if (!cataloged) {
+      return live
+    }
+    seedById.delete(live.id)
+    return { ...cataloged, ...live, options: cataloged.options }
+  })
+  return [...merged, ...seedById.values()]
 }
 
 export function sessionOptionValueIsValid(value: unknown): value is SessionOptionValue {

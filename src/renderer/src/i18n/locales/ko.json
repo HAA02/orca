@@ -30,7 +30,8 @@
         "resourceUsageToggleDescription": "리소스 관리자를 표시합니다. 클릭하면 CPU, 메모리, 세션, 데몬 제어, 워크스페이스 디스크 스캔을 볼 수 있습니다.",
         "portsToggleDescription": "라이브 워크스페이스 포트를 표시합니다. 워크스페이스 범위 포트 및 외부 수신기를 보려면 클릭하세요.",
         "antigravityToggleDescription": "활성 워크스페이스에 대한 Antigravity 구독 사용량을 표시합니다.",
-        "grokToggleDescription": "Grok CLI로 로그인한 경우 Grok 구독 크레딧 사용량을 표시합니다."
+        "grokToggleDescription": "Grok CLI로 로그인한 경우 Grok 구독 크레딧 사용량을 표시합니다.",
+        "cursorToggleDescription": "결제 주기 동안의 Cursor 플랜 사용량을 표시합니다."
       },
       "menuBarIcon": {
         "title": "메뉴 바 아이콘 표시",
@@ -450,7 +451,8 @@
             "9e37a5b1b3": "독립적인 작업을 병렬로 실행",
             "bddc4c09b8": "단계별 워크플로 실행",
             "ab0e9803b7": "다른 작업 트리에 넘겨주기",
-            "5e0d489fe1": "활성 작업 전달"
+            "5e0d489fe1": "활성 작업 전달",
+            "mixedProviderTeam": "한 워크트리에서 Cursor/OpenCode 혼합 팀 돌리기"
           }
         }
       },
@@ -1246,7 +1248,17 @@
         "noRunTargets": "이 프로젝트에는 실행 대상이 준비되어 있지 않습니다.",
         "perWorkspaceEnvHint": "레시피에서 온디맨드 환경 프로비저닝",
         "branchName": "브랜치 이름",
-        "branchNamePlaceholder": "feature/my-branch"
+        "branchNamePlaceholder": "feature/my-branch",
+        "connectTimedOut": "Connection timed out. It may still be connecting in the background.",
+        "connectingHost": "Connecting…",
+        "connectHost": "Connect",
+        "addHost": "Add host",
+        "addHostHint": "Register another machine or Orca server",
+        "addSshHost": "Add SSH host",
+        "addSshHostHint": "Use an existing machine over SSH",
+        "addRemoteOrcaServer": "Add Remote Orca Server",
+        "addRemoteOrcaServerHint": "Pair another Orca runtime",
+        "hostConnectionFailed": "Connection failed"
       },
       "NewWorkspaceComposerModal": {
         "createWorktree": "작업 트리 만들기",
@@ -4484,7 +4496,14 @@
           "worktree": {
             "flow": {
               "c460fecc4a": "일부 워크스페이스를 절전 모드로 전환하지 못했습니다.",
-              "8bc3fc0671": "워크스페이스를 절전 모드로 전환하지 못했습니다."
+              "8bc3fc0671": "워크스페이스를 절전 모드로 전환하지 못했습니다.",
+              "legacy": {
+                "unverified": "The older host runtime could not confirm terminal shutdown. The workspace was kept open; update the host and try again."
+              },
+              "host": {
+                "unverified": "The host could not confirm terminal shutdown. The workspace was kept open; check the connection and try again."
+              },
+              "retry": "The workspace was kept open. Try again; if the problem continues, check the host connection."
             }
           }
         },
@@ -4793,7 +4812,8 @@
           "sshImportFailed": "SSH 구성을 가져오지 못했습니다.",
           "importing": "가져오는 중...",
           "importSshConfig": "~/.ssh/config 가져오기",
-          "sshPersistenceDefault": "이 호스트의 원격 터미널은 종료하거나 릴레이를 재설정할 때까지 계속 실행됩니다."
+          "sshPersistenceDefault": "이 호스트의 원격 터미널은 종료하거나 릴레이를 재설정할 때까지 계속 실행됩니다.",
+          "advanced": "Advanced"
         },
         "ForgetSshWorkspaceDialog": {
           "reconnectFailed": "재연결 실패",
@@ -7129,7 +7149,11 @@
             "d2c6a0e8f1": "grok",
             "c1b5f9d7e0": "xai",
             "b0a4e8c6d9": "OAuth",
-            "a9f3d7b5c8": "로그인"
+            "a9f3d7b5c8": "로그인",
+            "c8a1b2d3e4": "Cursor 계정",
+            "d9b2c3e4f5": "Cursor IDE / cursor agent 로그인을 사용해 오르카에서 Cursor를 실행합니다.",
+            "f6d1e8a3b2": "Cursor 사용량 쿠키",
+            "a7e2f9b4c3": "cursor.com 세션 쿠키를 붙여넣어 상태 표시줄에서 플랜 사용량을 추적합니다."
           }
         },
         "advanced": {
@@ -7356,7 +7380,9 @@
             "d6c0a9e2f4": "grok",
             "c5b9f8d1e3": "xai",
             "usagePercentageDisplayTitle": "사용량 백분율",
-            "usagePercentageDisplayDescription": "공급자 한도를 사용한 비율 또는 남은 비율로 표시할지 선택합니다."
+            "usagePercentageDisplayDescription": "공급자 한도를 사용한 비율 또는 남은 비율로 표시할지 선택합니다.",
+            "a1f4c7e2b9": "Cursor 사용량",
+            "b2e5d8f3c1": "cursor.com 세션 쿠키로 Cursor 플랜 사용량을 표시합니다."
           }
         },
         "auto": {
@@ -9267,6 +9293,43 @@
           "title": "Editor Font Family",
           "description": "Font used by file editors and diff views. Leave empty to follow the terminal font.",
           "placeholder": "Same as terminal font"
+        },
+        "CursorAccountsSection": {
+          "b2c3d4e5f6": "로그인됨",
+          "a1b2c3d4e5": "Cursor",
+          "f6e5d4c3b2": "Cursor IDE / cursor agent 로그인(~/.cursor/cli-config.json)을 사용합니다. 오르카는 별도의 Cursor 비밀번호를 저장하지 않습니다.",
+          "0d8e77bc40": "Cursor CLI 문서",
+          "ad47a33f72": "로드 중…",
+          "c3d4e5f6a7": "환경 변수 CURSOR_API_KEY / CURSOR_AUTH_TOKEN으로 로그인되어 있습니다.",
+          "b36fa2c908": "로그인됨. 오르카는 디스크에 저장된 Cursor CLI 인증을 읽습니다.",
+          "e5f6a7b8c9": "Cursor CLI에 로그인되어 있지 않음",
+          "f6a7b8c9d0": "터미널에서 cursor agent login을 실행한 다음, 여기에서 상태 새로 고침을 클릭하세요.",
+          "a9b0c1d2e3": "Cursor IDE(또는 cursor-agent)를 설치한 뒤 터미널에서 cursor agent login을 실행하세요.",
+          "3325d996cb": "상태 새로 고침",
+          "a8f3e2c1b4": "API 키",
+          "b7e2d9f0a3": "Cursor IDE 로그인",
+          "usageCookieTitle": "Cursor 사용량 쿠키",
+          "usageCookieDescription": "상태 표시줄에서 플랜 사용량과 한도를 추적하려면 cursor.com 세션 쿠키를 붙여넣으세요.",
+          "usageCookieLabel": "Cursor 세션 쿠키",
+          "usageCookiePlaceholder": "WorkosCursorSessionToken=…",
+          "usageCookieHint": "브라우저 DevTools → Application → Cookies → cursor.com → WorkosCursorSessionToken에서 확인할 수 있습니다. 오르카는 사용량 조회 시 이 쿠키만 전송합니다."
+        },
+        "TeammatePresetsSection": {
+          "title": "Named teammates",
+          "description": "Type @grok-high or @mixed-team in native chat to spawn Cursor/OpenCode/Codex workers. The lead does not do that work.",
+          "header": "Native chat teammates",
+          "headerDescription": "Aliases are stored in Orca settings, not Hermes yaml.",
+          "maxConcurrent": "Max concurrent teammates",
+          "maxConcurrentDescription": "Caps same-worktree @mention workers. Default 5.",
+          "fallback": "Fall back to OpenCode if Cursor fails to start",
+          "fallbackDescription": "Closes the failed pane and retries with your OpenCode default model.",
+          "add": "Add bot",
+          "roster": "Roster {{token}} launches {{roles}}.",
+          "id": "Bot id",
+          "label": "Label",
+          "agent": "Agent",
+          "model": "Model",
+          "removeBot": "봇 제거"
         }
       },
       "right": {
@@ -13513,7 +13576,17 @@
         "skillScopeBuiltIn": "내장",
         "skillScopePlugin": "플러그인",
         "skillsLoaded": "스킬 로드 완료",
-        "noCommands": "일치하는 명령어가 없습니다"
+        "noCommands": "일치하는 명령어가 없습니다",
+        "teammates": "Teammates",
+        "teammateAgent": "Agent",
+        "noTeammates": "No matching teammates",
+        "teammateDelegated": "Delegated to {{token}}",
+        "teammateLaunchFailed": "Could not start teammate {{token}}",
+        "teammateUnknownAgent": "Unknown teammate agent",
+        "teammateMissingWorktree": "Could not find this chat's worktree",
+        "teammateBusy": "Already running {{limit}} teammates",
+        "teammatePreset": "Named bot",
+        "teammateRoster": "Team roster"
       },
       "tool": {
         "running": "실행 중…",

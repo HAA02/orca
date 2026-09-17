@@ -1,5 +1,9 @@
 import type { AgentType } from './agent-status-types'
-import { sessionOptionValueIsValid } from './agent-session-option-catalog'
+import {
+  catalogDefaultModel,
+  getAgentSessionOptionCatalog,
+  sessionOptionValueIsValid
+} from './agent-session-option-catalog'
 import type {
   PersistedNativeChatSessionOptions,
   SessionOptionValue
@@ -7,12 +11,26 @@ import type {
 
 export function resolveNativeChatSessionOptionDefaults(
   persisted: PersistedNativeChatSessionOptions | null | undefined,
+  agent: AgentType,
+  override?: Record<string, SessionOptionValue>
+): Record<string, SessionOptionValue> | undefined {
+  if (override && Object.keys(override).length > 0) {
+    return { ...override }
+  }
+  return resolvePersistedNativeChatSessionOptionDefaults(persisted, agent)
+}
+
+function resolvePersistedNativeChatSessionOptionDefaults(
+  persisted: PersistedNativeChatSessionOptions | null | undefined,
   agent: AgentType
 ): Record<string, SessionOptionValue> | undefined {
   const entry = persisted?.[agent]
   // Why: untouched settings must preserve the agent CLI's configured defaults;
-  // only a model explicitly selected by the user authorizes launch flags.
-  const modelId = typeof entry?.model === 'string' && entry.model.trim() ? entry.model : undefined
+  // only an explicit user selection authorizes launch flags. Catalogs that set
+  // launchDefaultModel opt out of that rule so Orca can pin the model itself.
+  const modelId =
+    (typeof entry?.model === 'string' && entry.model.trim() ? entry.model : undefined) ??
+    catalogLaunchDefaultModelId(agent)
   if (!modelId) {
     return undefined
   }
@@ -26,6 +44,11 @@ export function resolveNativeChatSessionOptionDefaults(
     }
   }
   return values
+}
+
+function catalogLaunchDefaultModelId(agent: AgentType): string | undefined {
+  const catalog = getAgentSessionOptionCatalog(agent)
+  return catalog?.launchDefaultModel ? catalogDefaultModel(catalog)?.id : undefined
 }
 
 export function updateNativeChatSessionOptionDefaults(args: {

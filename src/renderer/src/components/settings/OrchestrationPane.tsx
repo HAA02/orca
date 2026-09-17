@@ -19,6 +19,7 @@ import { useActiveProjectSkillRuntime } from '@/hooks/useActiveProjectSkillRunti
 import { SearchableSetting } from './SearchableSetting'
 import { matchesSettingsSearch } from './settings-search'
 import { useAppStore } from '../../store'
+import { TeammatePresetsSection } from './TeammatePresetsSection'
 import { getOrchestrationPaneSearchEntries } from './orchestration-search'
 import { AgentSkillSetupPanel } from './AgentSkillSetupPanel'
 import {
@@ -36,7 +37,8 @@ const EXAMPLE_ICONS = {
   'worktree-handoff': ArrowRightLeft,
   'child-sequence': ListChecks,
   'child-parallel': GitBranch,
-  'child-worktrees': Workflow
+  'child-worktrees': Workflow,
+  'mixed-provider-team': GitBranch
 } as const
 
 function resolveOrchestrationExampleIcon(example: SkillUsageExample): LucideIcon {
@@ -45,6 +47,8 @@ function resolveOrchestrationExampleIcon(example: SkillUsageExample): LucideIcon
 
 export function OrchestrationPane(): React.JSX.Element {
   const searchQuery = useAppStore((s) => s.settingsSearchQuery)
+  const settings = useAppStore((s) => s.settings)
+  const updateSettings = useAppStore((s) => s.updateSettings)
   const showOrchestration = matchesSettingsSearch(searchQuery, getOrchestrationPaneSearchEntries())
   const [skillPromptOpen, setSkillPromptOpen] = useState(false)
   const activeSkillRuntime = useActiveProjectSkillRuntime()
@@ -166,6 +170,8 @@ export function OrchestrationPane(): React.JSX.Element {
         open={skillPromptOpen}
         onOpenChange={setSkillPromptOpen}
       />
+
+      <TeammatePresetsSection settings={settings} updateSettings={updateSettings} />
 
       <SkillUsageExamplesSection
         heading={translate(

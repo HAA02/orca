@@ -30,6 +30,7 @@ import {
 } from '../../shared/branch-name-from-work'
 import {
   getCommitMessageAgentSpec,
+  pickDiscoveredDefaultModelId,
   type CommitMessageAgentCapability,
   type CommitMessageModelCapability
 } from '../../shared/commit-message-agent-spec'
@@ -38,6 +39,11 @@ import {
   planCommitMessageGeneration,
   type CommitMessagePlan
 } from '../../shared/commit-message-plan'
+import { resolveCursorModelDiscoveryArgs } from '../../shared/cursor-agent-command'
+import {
+  listCursorAccountCatalogModels,
+  preferCursorIdeCliModels
+} from '../../shared/cursor-ide-catalog'
 import { LOCAL_COMMIT_MESSAGE_HOST_KEY } from '../../shared/commit-message-host-key'
 import {
   resolveSourceControlAiForOperation,
@@ -46,6 +52,10 @@ import {
 import type { SourceControlAiOperation } from '../../shared/source-control-ai-types'
 import { renderSourceControlActionCommandTemplate } from '../../shared/source-control-ai-actions'
 import { resolveCliCommand } from '../codex-cli/command'
+import {
+  enabledCursorCliModelsFromLocalIde,
+  readHermesCachedCursorCliModels
+} from '../cursor/ide-catalog-store'
 import {
   getSpawnArgsForWindows,
   UnsafeWindowsBatchArgumentsError,
@@ -234,6 +244,21 @@ function toModelDiscoveryCapability(
   }
 }
 
+function cursorIdeFallbackModels(
+  spec: NonNullable<ReturnType<typeof getCommitMessageAgentSpec>>,
+  accountIds: readonly string[]
+): CommitMessageModelCapability[] {
+  if (spec.id !== 'cursor' || process.env.VITEST === 'true') {
+    return []
+  }
+  const account = accountIds.length > 0 ? accountIds : readHermesCachedCursorCliModels()
+  const enabled = enabledCursorCliModelsFromLocalIde(account)
+  const models = listCursorAccountCatalogModels(account, enabled)
+  return models.length > 0
+    ? models
+    : enabled.map((id) => ({ id, label: id === 'auto' ? 'Auto' : id }))
+}
+
 function finalizeModelDiscoveryOutput(
   spec: NonNullable<ReturnType<typeof getCommitMessageAgentSpec>>,
   stdout: string,
@@ -247,6 +272,14 @@ function finalizeModelDiscoveryOutput(
       stdout,
       stderr
     })
+    const ideModels = cursorIdeFallbackModels(spec, [])
+    if (ideModels.length > 0) {
+      return toModelDiscoveryCapability(
+        spec,
+        ideModels,
+        pickDiscoveredDefaultModelId(spec, ideModels)
+      )
+    }
     return {
       success: false,
       error: formatAgentCliFailureMessage(spec.label, stdout, stderr, code)
@@ -259,6 +292,14 @@ function finalizeModelDiscoveryOutput(
     models = spec.modelDiscovery?.parse(stderr) ?? []
   }
   if (models.length === 0) {
+    const ideModels = cursorIdeFallbackModels(spec, [])
+    if (ideModels.length > 0) {
+      return toModelDiscoveryCapability(
+        spec,
+        ideModels,
+        pickDiscoveredDefaultModelId(spec, ideModels)
+      )
+    }
     if (spec.models.length > 0) {
       console.warn('[commit-message] Model discovery returned no models; using static fallback:', {
         label: spec.label
@@ -267,9 +308,13 @@ function finalizeModelDiscoveryOutput(
     }
     return { success: false, error: `${spec.label} returned no available models.` }
   }
-  const defaultModelId = models.some((model) => model.id === spec.defaultModelId)
-    ? spec.defaultModelId
-    : models[0].id
+  if (spec.id === 'cursor' && process.env.VITEST !== 'true') {
+    models = preferCursorIdeCliModels(
+      models,
+      enabledCursorCliModelsFromLocalIde(models.map((model) => model.id))
+    )
+  }
+  const defaultModelId = pickDiscoveredDefaultModelId(spec, models)
   return toModelDiscoveryCapability(spec, models, defaultModelId)
 }
 
@@ -285,11 +330,13 @@ function planModelDiscovery(
   if (!command.ok) {
     return command
   }
+  const discoveryArgs =
+    spec.id === 'cursor' ? resolveCursorModelDiscoveryArgs(command.prefixArgs) : modelDiscovery.args
   return {
     ok: true,
     plan: {
       binary: command.binary,
-      args: [...command.prefixArgs, ...modelDiscovery.args],
+      args: [...command.prefixArgs, ...discoveryArgs],
       stdinPayload: null,
       label: spec.label
     }

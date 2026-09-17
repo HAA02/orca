@@ -4,6 +4,10 @@ import {
   isCustomAgentId
 } from './commit-message-agent-spec'
 import { planCustomCommand, tokenizeCustomCommandTemplate } from './commit-message-prompt'
+import {
+  CURSOR_STANDALONE_AGENT_LAUNCH,
+  resolveCursorCommandOverride
+} from './cursor-agent-command'
 import type { TuiAgent } from './types'
 
 // Why: planning is a pure transformation from "user request + prompt text"
@@ -38,7 +42,10 @@ export function planAgentBinary(
   defaultBinary: string,
   commandOverride: string | undefined
 ): { ok: true; binary: string; prefixArgs: string[] } | { ok: false; error: string } {
-  const command = commandOverride?.trim()
+  const command =
+    defaultBinary === CURSOR_STANDALONE_AGENT_LAUNCH
+      ? (resolveCursorCommandOverride(commandOverride) ?? commandOverride)?.trim()
+      : commandOverride?.trim()
   if (!command) {
     return { ok: true, binary: defaultBinary, prefixArgs: [] }
   }

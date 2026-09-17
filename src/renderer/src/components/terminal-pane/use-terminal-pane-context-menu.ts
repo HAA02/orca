@@ -35,7 +35,7 @@ import {
   prepareAgentSessionForkFromPane,
   type PreparedAgentSessionFork
 } from './terminal-agent-session-fork'
-import { prepareAgentSessionContinuationFromPane } from './terminal-agent-session-continuation'
+import { continueAgentSessionFromPane } from './terminal-agent-session-continuation'
 import type { AgentSessionContinuationRequest } from '@/lib/agent-session-continuation'
 import { recordCreatedTerminalPaneSplit } from './terminal-pane-split-completion'
 import { splitTerminalPaneWithInheritedCwd } from './terminal-pane-split-with-inherited-cwd'
@@ -410,14 +410,13 @@ export function useTerminalPaneContextMenu({
     if (!pane) {
       return
     }
-    const initialCwd = paneCwdRef.current.get(pane.id)?.cwd || fallbackCwd
-    const request = prepareAgentSessionContinuationFromPane({
+    const request = continueAgentSessionFromPane({
       pane,
+      paneCwdMap: paneCwdRef.current,
       tabId,
       worktreeId,
       groupId,
-      workspacePath: fallbackCwd,
-      initialCwd
+      workspacePath: fallbackCwd
     })
     if (request) {
       onAgentSessionContinuationReady(request)

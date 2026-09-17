@@ -150,7 +150,7 @@ describe('OrchestrationPane', () => {
     expect(markup).toContain('How to use it')
     expect(markup).not.toContain('See examples')
     const examples = getOrchestrationUsageExamples()
-    expect(examples).toHaveLength(5)
+    expect(examples).toHaveLength(6)
     for (const example of examples) {
       expect(markup).toContain(example.title)
     }

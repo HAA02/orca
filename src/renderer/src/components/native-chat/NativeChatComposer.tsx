@@ -33,6 +33,7 @@ import { useNativeChatFileAttachmentActions } from './use-native-chat-file-attac
 import { useNativeChatDictationActions } from './use-native-chat-dictation-actions'
 import { useNativeChatSessionOptionCommand } from './use-native-chat-session-option-command'
 import { useNativeChatPickerState } from './use-native-chat-picker-state'
+import { useNativeChatTeammateMention } from './use-native-chat-teammate-mention'
 import { useNativeChatPickerCommandDispatch } from './use-native-chat-picker-command-dispatch'
 import { useNativeChatTypedInsertion } from './use-native-chat-typed-insertion'
 import type {
@@ -73,7 +74,8 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       onOptimisticSendCanceled,
       onSlashCommand,
       onSwitchToTerminal,
-      readTerminalScreen
+      readTerminalScreen,
+      readLeadContext
     },
     ref
   ): React.JSX.Element {
@@ -115,6 +117,18 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     }
 
     const agentCommands = useMemo(() => getVerifiedNativeChatCommands(agent), [agent])
+    const teammate = useNativeChatTeammateMention({
+      terminalTabId,
+      paneKey,
+      draft,
+      caret,
+      textareaRef,
+      setDraft,
+      setCaret,
+      setActiveSuggestion,
+      onOptimisticSend,
+      readLeadContext
+    })
     const picker = useNativeChatPickerState({
       agent,
       terminalTabId,
@@ -122,6 +136,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       draft,
       caret,
       agentCommands,
+      teammateOptions: teammate.teammateOptions,
       textareaRef,
       setDraft,
       setCaret,
@@ -224,13 +239,25 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     const send = useCallback(() => {
       const text = draft
       const imagePaths = imageAttachments.map((attachment) => attachment.path)
-      if ((text.trim() === '' && imagePaths.length === 0) || disabled) {
+      if (text.trim() === '' && imagePaths.length === 0) {
         return
       }
       // Why: block a normal send while a session-option command (e.g. /model) is
       // still writing its body+delayed-Enter to the same pty, so the two write
       // sequences can't interleave on one input line.
-      if (isDispatchingSessionOption) {
+      if (isDispatchingSessionOption || !canSend) {
+        return
+      }
+      if (teammate.tryDispatchTeammate(text, imagePaths)) {
+        setHistory((prev) => pushHistory(prev, text))
+        setDraft('')
+        setCaret(0)
+        clearSkillOrigin()
+        clearImageAttachments()
+        setNotice(null)
+        return
+      }
+      if (disabled) {
         return
       }
       const target = resolveTarget()
@@ -286,6 +313,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       setNotice(null)
     }, [
       agent,
+      canSend,
       classifySend,
       clearSkillOrigin,
       clearImageAttachments,
@@ -297,6 +325,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       onOptimisticSend,
       onSlashCommand,
       sessionOptionsSurface,
+      teammate.tryDispatchTeammate,
       trackPendingSend,
       setDraft
     ])
@@ -338,6 +367,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       history,
       isComposing: () => isComposingRef.current,
       completePickerItem: completeItem,
+      completeTeammateMention: teammate.completeTeammate,
       dispatchPickerCommand,
       dismissPicker: dismiss,
       interrupt,
@@ -399,6 +429,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
           textarea?.focus()
           requestAnimationFrame(() => textarea?.setSelectionRange(result.caret, result.caret))
         }}
+        onChooseTeammate={teammate.completeTeammate}
         onRemoveImageAttachment={(id) => removeImageAttachment(id)}
         onAttach={pickAttachment}
         onDictationToggle={toggleDictation}

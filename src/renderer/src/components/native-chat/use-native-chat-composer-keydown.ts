@@ -6,6 +6,7 @@ import {
   type HistoryState,
   type NativeChatPickerItem
 } from './native-chat-composer-state'
+import type { TeammateMentionOption } from '../../../../shared/native-chat-teammate-mention'
 
 export type UseNativeChatComposerKeyDownArgs = {
   autocomplete: ComposerAutocomplete
@@ -14,6 +15,7 @@ export type UseNativeChatComposerKeyDownArgs = {
   history: HistoryState
   isComposing: () => boolean
   completePickerItem: (item: NativeChatPickerItem) => void
+  completeTeammateMention?: (item: TeammateMentionOption) => void
   dispatchPickerCommand: (item: Extract<NativeChatPickerItem, { kind: 'command' }>) => void
   dismissPicker: (triggerKey: string) => void
   interrupt: () => void
@@ -31,6 +33,7 @@ export function useNativeChatComposerKeyDown({
   history,
   isComposing,
   completePickerItem,
+  completeTeammateMention,
   dispatchPickerCommand,
   dismissPicker,
   interrupt,
@@ -80,6 +83,30 @@ export function useNativeChatComposerKeyDown({
         }
       }
 
+      if (autocomplete.mode === 'mention' && autocomplete.teammates.length > 0) {
+        const items = autocomplete.teammates
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          setActiveSuggestion((index) => (index + 1) % items.length)
+          return
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          setActiveSuggestion((index) => (index - 1 + items.length) % items.length)
+          return
+        }
+        if ((event.key === 'Enter' || event.key === 'Tab') && completeTeammateMention) {
+          event.preventDefault()
+          completeTeammateMention(items[activeSuggestion] ?? items[0])
+          return
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          dismissPicker(autocomplete.triggerKey)
+          return
+        }
+      }
+
       if (event.key === 'Escape') {
         event.preventDefault()
         interrupt()
@@ -114,6 +141,7 @@ export function useNativeChatComposerKeyDown({
       activeSuggestion,
       autocomplete,
       completePickerItem,
+      completeTeammateMention,
       dismissPicker,
       dispatchPickerCommand,
       draft,

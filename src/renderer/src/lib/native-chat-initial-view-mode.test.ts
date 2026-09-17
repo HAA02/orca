@@ -54,6 +54,13 @@ describe('decideInitialAgentTabViewMode', () => {
         agent: 'gemini'
       })
     ).toBeUndefined()
+    expect(
+      decideInitialAgentTabViewMode({
+        experimentalNativeChat: true,
+        openAgentTabsInChatByDefault: true,
+        agent: 'cursor'
+      })
+    ).toBeUndefined()
   })
 
   it.each([

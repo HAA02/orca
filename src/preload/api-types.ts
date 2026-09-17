@@ -383,6 +383,7 @@ import type {
 } from '../shared/claude-usage-types'
 import type {
   CodexRateLimitResetResult,
+  CursorAccountStatus,
   GrokAccountStatus,
   RateLimitRuntimeTarget,
   RateLimitState
@@ -3103,6 +3104,9 @@ export type PreloadApi = {
   }
   grokAccounts: {
     getStatus: () => Promise<GrokAccountStatus>
+  }
+  cursorAccounts: {
+    getStatus: () => Promise<CursorAccountStatus>
   }
   ssh: {
     listTargets: () => Promise<SshTarget[]>

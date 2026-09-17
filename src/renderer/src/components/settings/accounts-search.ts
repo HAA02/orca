@@ -191,6 +191,36 @@ export const getAccountsMiniMaxSearchEntries = createLocalizedCatalog(() => [
   }
 ])
 
+export const getAccountsCursorSearchEntries = createLocalizedCatalog(() => [
+  {
+    title: translate('auto.components.settings.accounts.search.c8a1b2d3e4', 'Cursor Accounts'),
+    description: translate(
+      'auto.components.settings.accounts.search.d9b2c3e4f5',
+      'Uses your Cursor IDE / cursor agent login for launching Cursor in Orca.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.accounts.search.e0c3d4f5a6', 'cursor'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.06662af91e', 'account'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.a9f3d7b5c8', 'login'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.8630464352', 'cli'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.b0a4e8c6d9', 'oauth')
+    ]
+  },
+  {
+    title: translate('auto.components.settings.accounts.search.f6d1e8a3b2', 'Cursor Usage Cookie'),
+    description: translate(
+      'auto.components.settings.accounts.search.a7e2f9b4c3',
+      'Paste your cursor.com session cookie to track plan usage in the status bar.'
+    ),
+    keywords: [
+      ...translateSearchKeyword('auto.components.settings.accounts.search.b8f3a0c5d4', 'cursor'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.c9a4b1d6e5', 'cookie'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.d0b5c2e7f6', 'usage'),
+      ...translateSearchKeyword('auto.components.settings.accounts.search.e1c6d3f8a7', 'rate limit')
+    ]
+  }
+])
+
 export const getAccountsGrokSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate('auto.components.settings.accounts.search.f4a8c2e1b7', 'Grok (xAI) Usage'),
@@ -217,6 +247,7 @@ export const getAccountsPaneSearchEntries = createLocalizedCatalog((): SettingsS
   ...getAccountsClaudeSearchEntries(),
   ...getAccountsCodexSearchEntries(),
   ...getAccountsGeminiSearchEntries(),
+  ...getAccountsCursorSearchEntries(),
   ...getAccountsOpencodeSearchEntries(),
   ...getAccountsMiniMaxSearchEntries(),
   ...getAccountsGrokSearchEntries()

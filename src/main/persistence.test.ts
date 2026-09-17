@@ -412,6 +412,43 @@ describe('Store', () => {
     expect(store.getRepos().map((repo) => repo.id)).toEqual(['profile-repo'])
   }, 15_000)
 
+  it('reapplies pinned profile settings after orca-data.json is overwritten', async () => {
+    writeDataFile({
+      schemaVersion: 1,
+      settings: {
+        defaultTuiAgent: 'cursor',
+        experimentalNativeChat: true,
+        openAgentTabsInChatByDefault: true,
+        disabledTuiAgents: [],
+        claudeAgentTeamsDefaultDisabledMigrated: true
+      }
+    })
+    writeFileSync(
+      join(testState.dir, 'profile-settings-pin.json'),
+      JSON.stringify({
+        defaultTuiAgent: 'cursor',
+        experimentalNativeChat: true,
+        openAgentTabsInChatByDefault: true,
+        disabledTuiAgents: []
+      }),
+      'utf-8'
+    )
+
+    writeDataFile({
+      schemaVersion: 1,
+      settings: {
+        defaultTuiAgent: 'claude',
+        experimentalNativeChat: false,
+        disabledTuiAgents: ['cursor'],
+        claudeAgentTeamsDefaultDisabledMigrated: true
+      }
+    })
+    const reloaded = await createStore()
+    expect(reloaded.getSettings().defaultTuiAgent).toBe('cursor')
+    expect(reloaded.getSettings().experimentalNativeChat).toBe(true)
+    expect(reloaded.getSettings().disabledTuiAgents).toEqual([])
+  }, 15_000)
+
   it('backfills project host setup compatibility records from legacy repos on load', async () => {
     writeDataFile({
       schemaVersion: 1,

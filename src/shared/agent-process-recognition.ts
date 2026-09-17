@@ -3,6 +3,7 @@ import type { AgentType } from './agent-status-types'
 import type { TuiAgent } from './types'
 import { filterHeadlessOneShotAgentCommand } from './agent-headless-command'
 import { getFirstCommandToken } from './command-token-scanner'
+import { tokenizeCommandLine } from './command-line-tokenizer'
 
 export type RecognizedAgentProcess = { agent: TuiAgent; processName: string }
 
@@ -93,48 +94,6 @@ function agentForNormalizedProcess(normalized: string): TuiAgent | undefined {
     return PROCESS_TO_AGENT.get('grok')
   }
   return undefined
-}
-
-function tokenizeCommandLine(commandLine: string): string[] {
-  const tokens: string[] = []
-  let current = ''
-  let quote: '"' | "'" | null = null
-  let escaped = false
-  for (let index = 0; index < commandLine.length; index += 1) {
-    const char = commandLine[index]
-    if (escaped) {
-      current += char
-      escaped = false
-      continue
-    }
-    if (char === '\\' && quote !== "'") {
-      const next = commandLine[index + 1]
-      if (next && (/\s/.test(next) || next === '"' || next === "'" || next === '\\')) {
-        escaped = true
-        continue
-      }
-    }
-    if ((char === '"' || char === "'") && quote === null) {
-      quote = char
-      continue
-    }
-    if (quote === char) {
-      quote = null
-      continue
-    }
-    if (/\s/.test(char) && quote === null) {
-      if (current) {
-        tokens.push(current)
-        current = ''
-      }
-      continue
-    }
-    current += char
-  }
-  if (current) {
-    tokens.push(current)
-  }
-  return tokens
 }
 
 function tokenLooksExecutable(token: string, index: number, firstNormalized: string): boolean {
@@ -255,6 +214,10 @@ function recognizePythonEntrypoint(
   return recognizeAgentProcess(entrypoint) ?? recognizePythonScriptEntrypoint(entrypoint)
 }
 
+function isCursorCliProcess(name: string): boolean {
+  return name === 'cursor' || name === 'cursor-agent'
+}
+
 export function isExpectedAgentProcess(
   processName: string | null | undefined,
   expectedProcess: string
@@ -263,6 +226,9 @@ export function isExpectedAgentProcess(
   const normalizedExpected = normalizeProcessName(expectedProcess)
   if (!normalizedProcess || !normalizedExpected) {
     return false
+  }
+  if (isCursorCliProcess(normalizedProcess) && isCursorCliProcess(normalizedExpected)) {
+    return true
   }
   return (
     normalizedProcess === normalizedExpected ||

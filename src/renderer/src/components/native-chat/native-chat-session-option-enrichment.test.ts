@@ -38,7 +38,7 @@ describe('native chat session option enrichment', () => {
       label: 'GPT 5.3 live',
       options: expect.arrayContaining([expect.objectContaining({ id: 'effort' })])
     })
-    expect(models.at(-1)).toMatchObject({ id: 'account-model' })
+    expect(models.map(({ id }) => id).slice(0, 2)).toEqual(['gpt-5.3-codex', 'account-model'])
     expect(readNativeChatEnrichedModels('cursor', 'ssh:two')).toBeNull()
   })
 
@@ -57,5 +57,11 @@ describe('native chat session option enrichment', () => {
     const discover = vi.fn()
     ensureNativeChatModelEnrichment({ agent: 'claude', hostKey: 'local', discover })
     expect(discover).not.toHaveBeenCalled()
+  })
+
+  it('probes Codex because the catalog exposes live model discovery', () => {
+    const discover = vi.fn().mockResolvedValue([])
+    ensureNativeChatModelEnrichment({ agent: 'codex', hostKey: 'local', discover })
+    expect(discover).toHaveBeenCalledOnce()
   })
 })

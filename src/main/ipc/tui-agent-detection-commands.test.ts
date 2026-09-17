@@ -46,4 +46,13 @@ describe('tui agent detection commands', () => {
     expect(getTuiAgentDetectionProbeCommands(commands, 'wsl')).toEqual([])
     expect(resolveDetectedTuiAgentIds(commands, new Set(['orca-ide', 'claude']), 'wsl')).toEqual([])
   })
+
+  it('detects Cursor from either cursor-agent or the IDE cursor binary', () => {
+    const commands = KNOWN_TUI_AGENT_DETECTION_COMMANDS.filter((command) => command.id === 'cursor')
+    expect(commands.map(({ cmd }) => cmd).sort()).toEqual(['cursor', 'cursor-agent'])
+    expect(resolveDetectedTuiAgentIds(commands, new Set(['cursor']), 'linux')).toEqual(['cursor'])
+    expect(resolveDetectedTuiAgentIds(commands, new Set(['cursor-agent']), 'linux')).toEqual([
+      'cursor'
+    ])
+  })
 })

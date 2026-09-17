@@ -1,4 +1,5 @@
 import { resolveAgentSessionOptionLaunch } from './agent-session-option-launch'
+import { resolveCursorCommandOverride, withCursorTrustFlag } from './cursor-agent-command'
 import type { SessionOptionValue } from './native-chat-session-options'
 import { getTuiAgentLaunchCommand, TUI_AGENT_CONFIG } from './tui-agent-config'
 import {
@@ -27,12 +28,15 @@ export function resolveAgentLaunchCommand(args: {
   sessionOptions?: Record<string, SessionOptionValue>
   isRemote?: boolean
 }): ResolvedAgentLaunchCommand {
-  const override = args.cmdOverrides[args.agent]
+  const catalogCommand = getTuiAgentLaunchCommand(TUI_AGENT_CONFIG[args.agent], args.platform, {
+    isRemote: args.isRemote
+  })
   const command =
-    override ||
-    getTuiAgentLaunchCommand(TUI_AGENT_CONFIG[args.agent], args.platform, {
-      isRemote: args.isRemote
-    })
+    args.agent === 'cursor'
+      ? withCursorTrustFlag(
+          resolveCursorCommandOverride(args.cmdOverrides.cursor) ?? catalogCommand
+        )
+      : args.cmdOverrides[args.agent] || catalogCommand
   const suffix = planAgentCliArgsSuffix(args.agentArgs, args.shell)
   if (!suffix.ok) {
     return suffix

@@ -24,6 +24,8 @@ export type NativeChatComposerProps = {
   onSwitchToTerminal?: () => void
   /** Reads the hosted TUI's current rendered screen when chat is entered. */
   readTerminalScreen?: () => string | null
+  /** Lead transcript excerpt for teammate dispatch; the lead does not execute the mention. */
+  readLeadContext?: () => string
 }
 
 export type NativeChatComposerHandle = {

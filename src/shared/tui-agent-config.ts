@@ -213,6 +213,8 @@ export const TUI_AGENT_CONFIG: Record<TuiAgent, TuiAgentConfig> = {
   },
   cursor: {
     detectCmd: 'cursor-agent',
+    // Why: Cursor IDE installs `cursor`; the agent is the `agent` subcommand, not a separate npm binary.
+    detectCmdAliases: ['cursor'],
     launchCmd: 'cursor-agent',
     expectedProcess: 'cursor-agent',
     promptInjectionMode: 'argv',

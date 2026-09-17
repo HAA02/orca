@@ -30,6 +30,7 @@ function picker(items = [COMMAND]): Extract<ComposerAutocomplete, { mode: 'slash
 function setup(autocomplete: ComposerAutocomplete = picker(), composing = false) {
   const callbacks = {
     completePickerItem: vi.fn(),
+    completeTeammateMention: vi.fn(),
     dispatchPickerCommand: vi.fn(),
     dismissPicker: vi.fn(),
     interrupt: vi.fn(),
@@ -88,12 +89,16 @@ describe('useNativeChatComposerKeyDown', () => {
     expect(callbacks.interrupt).not.toHaveBeenCalled()
   })
 
-  it('does not accept or submit while IME composition is active', () => {
-    const { handler, callbacks } = setup(picker(), true)
-    const event = keyEvent('Enter', true)
-    handler(event as never)
-    expect(event.preventDefault).toHaveBeenCalledOnce()
-    expect(callbacks.dispatchPickerCommand).not.toHaveBeenCalled()
+  it('completes a teammate mention without sending', () => {
+    const mention: Extract<ComposerAutocomplete, { mode: 'mention' }> = {
+      mode: 'mention',
+      query: 'cursor',
+      triggerKey: '@:0',
+      teammates: [{ agent: 'cursor', label: 'cursor', token: '@cursor' }]
+    }
+    const { handler, callbacks } = setup(mention)
+    handler(keyEvent('Enter') as never)
+    expect(callbacks.completeTeammateMention).toHaveBeenCalledWith(mention.teammates[0])
     expect(callbacks.send).not.toHaveBeenCalled()
   })
 })

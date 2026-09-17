@@ -6,6 +6,7 @@ export type UsageProviderSettings = Pick<
   | 'codexManagedAccounts'
   | 'claudeManagedAccounts'
   | 'opencodeSessionCookie'
+  | 'cursorSessionCookie'
   | 'geminiCliOAuthEnabled'
 > & {
   // Why: Antigravity has no separate persisted usage credential in Orca. The
@@ -28,6 +29,7 @@ type UsageProviderSnapshots = {
   antigravity: ProviderRateLimits | null
   minimax: ProviderRateLimits | null
   grok: ProviderRateLimits | null
+  cursor: ProviderRateLimits | null
 }
 
 type UsageProviderId = ProviderRateLimits['provider']
@@ -72,6 +74,7 @@ export function hasUsageProviderSettings(
     (settings?.claudeManagedAccounts?.length ?? 0) > 0 ||
     settings?.geminiCliOAuthEnabled === true ||
     Boolean(settings?.opencodeSessionCookie?.trim()) ||
+    Boolean(settings?.cursorSessionCookie?.trim()) ||
     // Antigravity's durable signal requires geminiCliOAuthEnabled, so it is
     // already covered by the gemini term above.
     settings?.minimaxCookieConfigured === true ||
@@ -97,6 +100,9 @@ export function hasUsageProviderSettingsForProvider(
   }
   if (providerId === 'opencode-go') {
     return Boolean(settings.opencodeSessionCookie?.trim())
+  }
+  if (providerId === 'cursor') {
+    return Boolean(settings.cursorSessionCookie?.trim())
   }
   if (providerId === 'antigravity') {
     // Why: the Antigravity snapshot mirrors the Gemini fetch, which stays
@@ -163,7 +169,8 @@ export function isUsageEmptyState(
     isProviderSnapshotPending(providers.kimi) ||
     antigravitySnapshotPending ||
     isProviderSnapshotPending(providers.minimax) ||
-    isProviderSnapshotPending(providers.grok)
+    isProviderSnapshotPending(providers.grok) ||
+    isProviderSnapshotPending(providers.cursor)
   ) {
     return false
   }
@@ -176,6 +183,7 @@ export function isUsageEmptyState(
     !isProviderConfigured(providers.kimi) &&
     !isProviderConfigured(providers.antigravity) &&
     !isProviderConfigured(providers.minimax) &&
-    !isProviderConfigured(providers.grok)
+    !isProviderConfigured(providers.grok) &&
+    !isProviderConfigured(providers.cursor)
   )
 }

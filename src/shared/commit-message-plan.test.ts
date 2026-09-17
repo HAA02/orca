@@ -155,6 +155,38 @@ describe('planCommitMessageGeneration', () => {
     })
   })
 
+  it('prefixes the IDE agent subcommand when Cursor is launched as cursor agent', () => {
+    const result = planCommitMessageGeneration(
+      {
+        agentId: 'cursor',
+        model: 'cursor-grok-4.6-high',
+        agentCommandOverride: 'cursor agent'
+      },
+      'PROMPT'
+    )
+
+    expect(result).toEqual({
+      ok: true,
+      plan: {
+        binary: 'cursor',
+        args: [
+          'agent',
+          '--print',
+          '--mode',
+          'ask',
+          '--trust',
+          '--output-format',
+          'text',
+          '--model',
+          'cursor-grok-4.6-high',
+          'PROMPT'
+        ],
+        stdinPayload: null,
+        label: 'Cursor'
+      }
+    })
+  })
+
   it('plans Codex exec as non-interactive read-only generation with the prompt on stdin only', () => {
     const result = planCommitMessageGeneration(
       {

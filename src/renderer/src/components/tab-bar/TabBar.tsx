@@ -81,6 +81,8 @@ import {
   selectNativeChatTabWideFallbackUnsafeTabsById,
   selectTabAgentTypesByTabId
 } from './tab-agent-types-by-tab-id'
+import { resolveContinueAgentSessionTabId } from './continue-agent-session-tab'
+import { AgentSessionContinuationMenuItem } from '../terminal-pane/AgentSessionContinuationMenuItem'
 import { resolveCommittedTitleAgentType } from '@/lib/pane-agent-evidence'
 
 const isWindows = navigator.userAgent.includes('Windows')
@@ -129,6 +131,8 @@ type TabBarProps = {
   onSetCustomTitle: (tabId: string, title: string | null) => void
   onSetTabColor: (tabId: string, color: string | null) => void
   onTogglePaneExpand: (tabId: string) => void
+  /** Hands off the given tab's agent session to a model chosen in the continuation dialog. */
+  onContinueAgentSession?: (tabId: string) => void
   editorFiles?: (OpenFile & { tabId?: string })[]
   browserTabs?: (BrowserTabState & { tabId?: string })[]
   activeFileId?: string | null
@@ -254,6 +258,7 @@ function TabBarInner({
   onSetCustomTitle,
   onSetTabColor,
   onTogglePaneExpand,
+  onContinueAgentSession,
   editorFiles,
   browserTabs,
   activeFileId,
@@ -461,6 +466,15 @@ function TabBarInner({
   const nativeChatTranscriptIsLocalReadable = useAppStore((s) =>
     isNativeChatTranscriptLocalReadable(getConnectionIdFromState(s, worktreeId))
   )
+  const continueAgentSessionTabId = useMemo(
+    () =>
+      resolveContinueAgentSessionTabId({
+        activeTabId,
+        agentTypesByTabId: tabAgentTypesByTabId,
+        launchAgentByTabId: new Map(tabs.map((tab) => [tab.id, tab.launchAgent]))
+      }),
+    [activeTabId, tabAgentTypesByTabId, tabs]
+  )
 
   // Why: <webview> clicks are out-of-process, so Radix's document-pointerdown outside-click check misses them; use window blur.
   const [newTabMenuOpen, setNewTabMenuOpen] = useState(false)
@@ -625,12 +639,25 @@ function TabBarInner({
   }
   const launchAgentFromNewTabEntry = (agent: TuiAgent): void => {
     const option = agentLaunchOptions.find((candidate) => candidate.agent === agent)
-    const result = launchAgentInNewTab({
-      agent,
-      worktreeId,
-      groupId: resolvedGroupId,
-      launchSource: 'tab_bar_quick_launch'
-    })
+    let result: ReturnType<typeof launchAgentInNewTab>
+    try {
+      result = launchAgentInNewTab({
+        agent,
+        worktreeId,
+        groupId: resolvedGroupId,
+        launchSource: 'tab_bar_quick_launch'
+      })
+    } catch (error) {
+      console.error('Failed to launch agent from new tab menu', error)
+      toast.error(
+        translate(
+          'auto.components.tab.bar.TabBar.ab589350e5',
+          'Could not build launch command for {{value0}}.',
+          { value0: option?.label ?? agent }
+        )
+      )
+      return
+    }
     if (!result) {
       toast.error(
         translate(
@@ -1283,6 +1310,17 @@ function TabBarInner({
                 onDidOpenEntry={() => setNewTabMenuOpen(false)}
               />
               {showStaticCreateMenuItems ? <DropdownMenuSeparator /> : null}
+            </>
+          ) : null}
+          {showStaticCreateMenuItems && continueAgentSessionTabId && onContinueAgentSession ? (
+            <>
+              <AgentSessionContinuationMenuItem
+                onSelect={() => {
+                  onContinueAgentSession(continueAgentSessionTabId)
+                }}
+                className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
+              />
+              <DropdownMenuSeparator />
             </>
           ) : null}
           {showStaticCreateMenuItems ? standardCreateMenuItems : null}

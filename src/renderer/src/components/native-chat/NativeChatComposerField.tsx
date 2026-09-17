@@ -11,7 +11,9 @@ import { NATIVE_FILE_DROP_TARGET } from '../../../../shared/native-file-drop'
 import { basename } from '@/lib/path'
 import { isNativeChatPastedImagePath } from './native-chat-image-paste'
 import type { ComposerAutocomplete, NativeChatPickerItem } from './native-chat-composer-state'
+import type { TeammateMentionOption } from '../../../../shared/native-chat-teammate-mention'
 import { NativeChatMentionHint, NativeChatPickerMenu } from './NativeChatAutocompleteMenus'
+import { NativeChatTeammateMentionMenu } from './NativeChatTeammateMentionMenu'
 import { NativeChatComposerActions } from './NativeChatComposerActions'
 import { nativeChatComposerPlaceholder } from './native-chat-composer-target'
 import type {
@@ -45,6 +47,7 @@ export type NativeChatComposerFieldProps = {
   onChoosePickerItem: (item: NativeChatPickerItem) => void
   onRetrySkills: () => void
   onAcceptMention: () => void
+  onChooseTeammate: (option: TeammateMentionOption) => void
   onRemoveImageAttachment: (id: string) => void
   onAttach: () => void
   onDictationToggle: () => void
@@ -87,6 +90,7 @@ export function NativeChatComposerField({
   onChoosePickerItem,
   onRetrySkills,
   onAcceptMention,
+  onChooseTeammate,
   onRemoveImageAttachment,
   onAttach,
   onDictationToggle,
@@ -111,7 +115,16 @@ export function NativeChatComposerField({
               onRetry={onRetrySkills}
             />
           ) : null}
-          {autocomplete.mode === 'mention' ? (
+          {autocomplete.mode === 'mention' && autocomplete.teammates.length > 0 ? (
+            <NativeChatTeammateMentionMenu
+              teammates={autocomplete.teammates}
+              query={autocomplete.query}
+              activeIndex={activeSuggestion}
+              listboxId={pickerListboxId}
+              onChoose={onChooseTeammate}
+            />
+          ) : null}
+          {autocomplete.mode === 'mention' && autocomplete.teammates.length === 0 ? (
             <NativeChatMentionHint query={autocomplete.query} onAccept={onAcceptMention} />
           ) : null}
           {notice ? (

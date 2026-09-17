@@ -88,8 +88,8 @@ describe('shouldBypassXtermKeyboardEvent — Windows/Linux', () => {
   })
 
   it('does not bubble plain Ctrl letter chords — shell shortcuts must reach PTY', () => {
-    // Ctrl+A, Ctrl+E, Ctrl+U, Ctrl+R, Ctrl+L — all readline-critical.
-    for (const keyCode of ['a', 'e', 'u', 'r', 'l']) {
+    // Ctrl+A, Ctrl+E, Ctrl+K, Ctrl+U, Ctrl+R, Ctrl+L — all readline-critical.
+    for (const keyCode of ['a', 'e', 'k', 'u', 'r', 'l']) {
       expect(
         shouldBypassXtermKeyboardEvent(
           event({ key: keyCode, code: `Key${keyCode.toUpperCase()}`, ctrlKey: true }),

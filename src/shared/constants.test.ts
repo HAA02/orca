@@ -90,6 +90,16 @@ describe('getDefaultSettings', () => {
     expect(getDefaultSettings('/tmp').experimentalEphemeralVms).toBe(false)
   })
 
+  it('ships named native-chat teammate bots with a concurrency cap of 5', () => {
+    expect(getDefaultSettings('/tmp').nativeChatTeammate).toMatchObject({
+      maxConcurrent: 5,
+      fallbackEnabled: true
+    })
+    expect(
+      getDefaultSettings('/tmp').nativeChatTeammate?.presets.some((row) => row.id === 'grok-high')
+    ).toBe(true)
+  })
+
   it('keeps the agent dashboard popout disabled by default', () => {
     expect(getDefaultSettings('/tmp').experimentalAgentDashboardPopout).toBe(false)
   })

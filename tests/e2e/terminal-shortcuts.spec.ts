@@ -420,6 +420,10 @@ const mod = isMac ? 'Meta' : 'Control'
 const splitVerticalChord = isMac ? `${mod}+d` : `${mod}+Shift+d`
 const splitHorizontalChord = isMac ? `${mod}+Shift+d` : 'Alt+Shift+d'
 
+// Why: Ctrl+K is readline kill-to-end-of-line on Linux/Windows, so pane clear
+// moved to Ctrl+Shift+K there (#readline-chords); macOS keeps Cmd+K.
+const clearPaneChord = isMac ? `${mod}+k` : `${mod}+Shift+k`
+
 // Why: a freshly split pane can transiently still report a running child, so
 // poll for the confirm dialog and pane-count settling instead of a fixed wait.
 async function closeActivePaneAndSettle(page: Page, expectedCount: number): Promise<void> {
@@ -717,7 +721,7 @@ test.describe('Terminal Shortcuts', () => {
   }) => {
     await installMainProcessPtyWriteSpy(electronApp)
 
-    // Seed the buffer so Cmd+K has something to clear.
+    // Seed the buffer so the pane-clear chord has something to clear.
     const ptyId = await waitForActivePanePtyId(orcaPage)
     const marker = `SHORTCUT_TEST_${Date.now()}`
     await execInTerminal(orcaPage, ptyId, `echo ${marker}`)
@@ -734,6 +738,10 @@ test.describe('Terminal Shortcuts', () => {
     if (!isMac) {
       await pressAndExpectWrite(orcaPage, electronApp, 'Control+ArrowLeft', '\x1bb')
       await pressAndExpectWrite(orcaPage, electronApp, 'Control+ArrowRight', '\x1bf')
+
+      // Ctrl+K/Ctrl+U must stay readline kill-to-EOL / kill-to-BOL, not pane clear.
+      await pressAndExpectWrite(orcaPage, electronApp, 'Control+k', '\x0b')
+      await pressAndExpectWrite(orcaPage, electronApp, 'Control+u', '\x15')
     }
 
     // Alt+Backspace → Esc+DEL (readline backward-kill-word).
@@ -759,13 +767,13 @@ test.describe('Terminal Shortcuts', () => {
 
     // --- action chords (no PTY byte; assert via visible effect) ---
 
-    // Cmd/Ctrl+K clears the pane.
+    // Cmd/Ctrl+Shift+K clears the pane (see clearPaneChord).
     await focusActiveTerminalInput(orcaPage)
-    await orcaPage.keyboard.press(`${mod}+k`)
+    await orcaPage.keyboard.press(clearPaneChord)
     await expect
       .poll(async () => (await getTerminalContent(orcaPage)).includes(marker), {
         timeout: 5_000,
-        message: 'Cmd+K did not clear the terminal buffer'
+        message: `${clearPaneChord} did not clear the terminal buffer`
       })
       .toBe(false)
 

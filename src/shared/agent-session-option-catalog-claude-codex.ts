@@ -1,4 +1,9 @@
-import type { AgentSessionOptionCatalog, CatalogOption } from './agent-session-option-catalog-types'
+import { parseCodexModels } from './commit-message-agent-spec'
+import type {
+  AgentSessionOptionCatalog,
+  CatalogModel,
+  CatalogOption
+} from './agent-session-option-catalog-types'
 
 function hasFlag(tokens: readonly string[], flags: readonly string[]): boolean {
   return tokens.some((token) =>
@@ -131,10 +136,19 @@ function codexEffort(includeExtraHigh: boolean): CatalogOption {
   }
 }
 
+function parseCodexCatalogModels(stdout: string): CatalogModel[] {
+  return parseCodexModels(stdout).map((model) => ({
+    id: model.id,
+    label: model.label,
+    options: [codexEffort((model.thinkingLevels ?? []).some((level) => level.id === 'xhigh'))]
+  }))
+}
+
 export const CODEX_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
   // Why: Codex model access depends on auth. Keep this seed short and allow
   // unknown persisted ids to pass through instead of claiming a complete list.
   models: [
+    { id: 'gpt-6-astra', label: 'GPT-6 Astra', options: [codexEffort(true)] },
     { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol', options: [codexEffort(true)] },
     { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra', options: [codexEffort(true)] },
     { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna', options: [codexEffort(false)] },
@@ -149,5 +163,6 @@ export const CODEX_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
     launchArgs: (value) => ['-m', String(value)],
     agentArgsOverride: (tokens) => hasFlag(tokens, ['-m', '--model']),
     midSession: { kind: 'agent-picker', command: '/model' }
-  }
+  },
+  listModels: { command: 'codex debug models', parse: parseCodexCatalogModels }
 }

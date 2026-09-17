@@ -1942,6 +1942,9 @@ app.whenReady().then(async () => {
       models: settings.minimaxUsageModels
     }
   })
+  rateLimits.setCursorConfigResolver(() => ({
+    sessionCookie: store!.getSettings().cursorSessionCookie
+  }))
   rateLimits.setGeminiCliOAuthEnabledResolver(() => store!.getSettings().geminiCliOAuthEnabled)
   rateLimits.setNetworkProxySettingsResolver(() => store!.getSettings())
   keybindings = new KeybindingService({

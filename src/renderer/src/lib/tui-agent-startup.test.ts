@@ -125,10 +125,27 @@ describe('buildAgentStartupPlan', () => {
       })
     ).toEqual({
       agent: 'cursor',
-      launchCommand: "cursor-agent 'Review this file'",
+      launchCommand: "cursor-agent --trust 'Review this file'",
       expectedProcess: 'cursor-agent',
       followupPrompt: null,
-      launchConfig: emptyLaunchConfig('cursor-agent')
+      launchConfig: emptyLaunchConfig('cursor-agent --trust')
+    })
+  })
+
+  it('waits on the IDE process when Cursor is launched as cursor agent', () => {
+    expect(
+      buildAgentStartupPlan({
+        agent: 'cursor',
+        prompt: 'Review this file',
+        cmdOverrides: { cursor: 'cursor agent' },
+        platform: 'linux'
+      })
+    ).toEqual({
+      agent: 'cursor',
+      launchCommand: "cursor agent --trust 'Review this file'",
+      expectedProcess: 'cursor',
+      followupPrompt: null,
+      launchConfig: emptyLaunchConfig('cursor agent --trust')
     })
   })
 

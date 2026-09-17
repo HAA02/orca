@@ -94,6 +94,46 @@ describe('deriveComposerAutocomplete — mention', () => {
   it('does not fire for an email-like `@` (no preceding whitespace)', () => {
     expect(deriveComposerAutocomplete('me@example', 10, COMMANDS).mode).toBe('none')
   })
+
+  it('offers teammate rows for agent tokens and keeps file queries as files', () => {
+    const teammates = [
+      { agent: 'cursor' as const, label: 'cursor', token: '@cursor' },
+      {
+        agent: 'cursor' as const,
+        model: 'cursor-grok-4.6-high',
+        label: 'Grok 4.6',
+        token: '@cursor/cursor-grok-4.6-high'
+      }
+    ]
+    const agentMention = deriveComposerAutocomplete(
+      '@cur',
+      4,
+      COMMANDS,
+      [],
+      null,
+      { status: 'ready', skills: [] },
+      null,
+      teammates
+    )
+    expect(agentMention.mode).toBe('mention')
+    if (agentMention.mode === 'mention') {
+      expect(agentMention.teammates.map((row) => row.token)).toContain('@cursor')
+    }
+    const fileMention = deriveComposerAutocomplete(
+      '@src/app.ts',
+      12,
+      COMMANDS,
+      [],
+      null,
+      { status: 'ready', skills: [] },
+      null,
+      teammates
+    )
+    expect(fileMention.mode).toBe('mention')
+    if (fileMention.mode === 'mention') {
+      expect(fileMention.teammates).toEqual([])
+    }
+  })
 })
 
 describe('deriveComposerAutocomplete — skill', () => {

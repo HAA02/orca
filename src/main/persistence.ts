@@ -209,6 +209,8 @@ import {
   SOURCE_CONTROL_TEXT_ACTION_IDS
 } from '../shared/source-control-ai-actions'
 import { normalizeDisabledTuiAgents } from '../shared/tui-agent-selection'
+import { normalizeNativeChatTeammateSettings } from '../shared/native-chat-teammate-presets'
+import { restorePinnedProfileSettings, syncProfileSettingsPin } from './profile-settings-pin-file'
 import {
   DEFAULT_TUI_AGENT_ARGS,
   DEFAULT_TUI_AGENT_ENV,
@@ -2589,6 +2591,11 @@ export class Store {
     const loaded = this.load()
     const normalized = normalizePersistedPaneIdentityState(loaded)
     this.state = normalized.state
+    const pinned = restorePinnedProfileSettings(this.dataFile, this.state.settings)
+    if (pinned.changed) {
+      this.state.settings = pinned.settings
+      this.loadNeedsSave = true
+    }
     // Why: activeView is a frequent, tiny preference; keeping it beside the
     // profile avoids serializing the multi-MB recovery store on navigation.
     this.activeViewPreference = new ActiveViewPreference(this.dataFile, this.state.ui?.activeView)
@@ -2799,6 +2806,9 @@ export class Store {
         // Why: secrets are stored encrypted via safeStorage; decrypt at the load boundary so the app sees plaintext.
         if (parsed.settings?.opencodeSessionCookie) {
           parsed.settings.opencodeSessionCookie = decrypt(parsed.settings.opencodeSessionCookie)
+        }
+        if (parsed.settings?.cursorSessionCookie) {
+          parsed.settings.cursorSessionCookie = decrypt(parsed.settings.cursorSessionCookie)
         }
         if (parsed.settings?.httpProxyUrl) {
           parsed.settings.httpProxyUrl = decrypt(parsed.settings.httpProxyUrl)
@@ -3562,6 +3572,7 @@ export class Store {
       settings: {
         ...this.state.settings,
         opencodeSessionCookie: encryptToSentinel(this.state.settings.opencodeSessionCookie),
+        cursorSessionCookie: encryptToSentinel(this.state.settings.cursorSessionCookie ?? ''),
         httpProxyUrl: encryptToSentinel(this.state.settings.httpProxyUrl ?? '')
       },
       ui: {
@@ -5134,6 +5145,11 @@ export class Store {
     if ('disabledTuiAgents' in updates) {
       sanitizedUpdates.disabledTuiAgents = normalizeDisabledTuiAgents(updates.disabledTuiAgents)
     }
+    if ('nativeChatTeammate' in updates) {
+      sanitizedUpdates.nativeChatTeammate = normalizeNativeChatTeammateSettings(
+        updates.nativeChatTeammate
+      )
+    }
     if ('agentDefaultArgs' in updates) {
       sanitizedUpdates.agentDefaultArgs = normalizeTuiAgentArgsRecord(updates.agentDefaultArgs)
       sanitizedUpdates.agentYoloDefaultsMigrated = true
@@ -5250,6 +5266,7 @@ export class Store {
       }),
       ...(mergedTelemetry !== undefined ? { telemetry: mergedTelemetry } : {})
     }
+    syncProfileSettingsPin(this.dataFile, this.state.settings, sanitizedUpdates)
     this.scheduleSave()
     const changedUpdates = {} as Partial<GlobalSettings> & Record<string, unknown>
     for (const key of Object.keys(sanitizedUpdates) as (keyof GlobalSettings)[]) {

@@ -65,13 +65,18 @@ function parseCursorModels(stdout: string): CatalogModel[] {
   const seen = new Set<string>()
   const models: CatalogModel[] = []
   for (const line of stdout.split(/\r?\n/)) {
-    const match = line.trim().match(/^(?:[-*]\s+)?([a-z0-9][a-z0-9._-]*)(?:\s+\(.*\))?$/i)
-    const id = match?.[1]
+    const trimmed = line.trim()
+    const dashed = trimmed.match(/^(?:[-*]\s+)?([a-z0-9][a-z0-9._-]*)\s+-\s+(.+)$/i)
+    const simple = trimmed.match(/^(?:[-*]\s+)?([a-z0-9][a-z0-9._-]*)(?:\s+\(.*\))?$/i)
+    const id = dashed?.[1] ?? simple?.[1]
     if (!id || id.toLowerCase() === 'models' || seen.has(id)) {
       continue
     }
     seen.add(id)
-    models.push({ id, label: id === 'auto' ? 'Auto' : id, options: [] })
+    const label =
+      dashed?.[2]?.replace(/\s+\((?:default|current)\)$/i, '').trim() ||
+      (id === 'auto' ? 'Auto' : id)
+    models.push({ id, label, options: [] })
   }
   return models
 }
@@ -108,5 +113,5 @@ export const CURSOR_SESSION_OPTION_CATALOG: AgentSessionOptionCatalog = {
     const fast = values.fastMode === true ? '-fast' : ''
     return `${modelId}${effort}${fast}`
   },
-  listModels: { command: 'cursor-agent models', parse: parseCursorModels }
+  listModels: { command: 'cursor agent models', parse: parseCursorModels }
 }

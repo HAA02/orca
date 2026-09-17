@@ -13,7 +13,10 @@ import { useAppStore } from '../../store'
 import { destroyWorkspaceWebviews } from '../../store/slices/browser-webview-cleanup'
 import { requestEditorFileClose } from '../editor/editor-autosave'
 import { focusTerminalTabSurface } from '../../lib/focus-terminal-tab-surface'
-import { TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
+import {
+  CONTINUE_AGENT_SESSION_EVENT,
+  TOGGLE_TERMINAL_PANE_EXPAND_EVENT
+} from '@/constants/terminal'
 import {
   activateWebRuntimeSessionTab,
   closeWebRuntimeSessionTab,
@@ -394,6 +397,22 @@ export function useTabGroupWorkspaceModel({
     [activateTerminal, groupTabs]
   )
 
+  // Why: the continuation dialog renders inside the source TerminalPane, so
+  // activate its tab first (same as the expand event) before handing off.
+  const continueAgentSessionInNewSession = useCallback(
+    (terminalId: string) => {
+      activateTerminal(terminalId)
+      requestAnimationFrame(() => {
+        window.dispatchEvent(
+          new CustomEvent(CONTINUE_AGENT_SESSION_EVENT, {
+            detail: { tabId: terminalId }
+          })
+        )
+      })
+    },
+    [activateTerminal]
+  )
+
   const activateEditor = useCallback(
     (tabId: string) => {
       const item = groupTabs.find((candidate) => candidate.id === tabId)
@@ -640,7 +659,8 @@ export function useTabGroupWorkspaceModel({
       pinFile,
       setTabColor,
       setTabCustomTitle,
-      toggleTerminalPaneExpand
+      toggleTerminalPaneExpand,
+      continueAgentSession: continueAgentSessionInNewSession
     }
   }
 }

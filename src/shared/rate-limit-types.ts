@@ -55,6 +55,7 @@ export type ProviderRateLimits = {
     | 'minimax'
     | 'grok'
     | 'antigravity'
+    | 'cursor'
   /** 5-hour session window, null if not available. */
   session: RateLimitWindow | null
   /** 7-day weekly window, null if not available. */
@@ -115,6 +116,16 @@ export type GrokAccountStatus = {
   error: string | null
 }
 
+export type CursorAccountStatus = {
+  signedIn: boolean
+  email: string | null
+  displayName: string | null
+  authSource: 'cli-config' | 'api-key' | null
+  cursorOnPath: boolean
+  cursorAgentOnPath: boolean
+  error: string | null
+}
+
 export type RateLimitState = {
   claude: ProviderRateLimits | null
   codex: ProviderRateLimits | null
@@ -124,6 +135,7 @@ export type RateLimitState = {
   antigravity: ProviderRateLimits | null
   minimax: ProviderRateLimits | null
   grok: ProviderRateLimits | null
+  cursor: ProviderRateLimits | null
   /**
    * True when a MiniMax session cookie is persisted on disk. The cookie lives
    * outside GlobalSettings, so this flag is the durable signal that the

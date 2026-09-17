@@ -46,5 +46,16 @@ export const getOrchestrationUsageExamples = createLocalizedCatalog((): SkillUsa
     summary: 'Give each child agent its own worktree so parallel implementation stays reviewable.',
     prompt:
       'Use /orchestration to split this onboarding update into smaller PRs, each in its own child worktree: setup state, settings UI, copy, and tests.'
+  },
+  {
+    id: 'mixed-provider-team',
+    title: translate(
+      'auto.lib.orchestration.usage.examples.mixedProviderTeam',
+      'Run a mixed-provider team in one worktree'
+    ),
+    summary:
+      'Supervise Cursor, OpenCode, and Codex teammates as separate panes, not Claude Agent Teams.',
+    prompt:
+      'In native chat, send @mixed-team plus the task. That roster is PM on @grok-high, implementer on @oc-kimi, reviewer on @astra. Do not use Claude Agent Teams. Wait for worker_done bubbles in this lead chat.'
   }
 ])

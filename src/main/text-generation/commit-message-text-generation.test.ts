@@ -382,6 +382,42 @@ describe('discoverCommitMessageModelsLocal', () => {
     }
   })
 
+  it('discovers Cursor IDE models through cursor agent models', async () => {
+    const listeners = new Map<string, (value: unknown) => void>()
+    const child = {
+      pid: 123,
+      kill: vi.fn(),
+      stdout: { on: vi.fn((event, callback) => listeners.set(`stdout:${event}`, callback)) },
+      stderr: { on: vi.fn((event, callback) => listeners.set(`stderr:${event}`, callback)) },
+      stdin: { end: vi.fn() },
+      on: vi.fn((event, callback) => listeners.set(event, callback))
+    }
+    spawnMock.mockReturnValue(child as never)
+
+    const pending = discoverCommitMessageModelsLocal('cursor', undefined, 'cursor agent')
+
+    listeners.get('stdout:data')?.(Buffer.from('auto - Auto\ncursor-grok-4.6-high - Grok 4.6\n'))
+    listeners.get('close')?.(0)
+
+    await expect(pending).resolves.toMatchObject({
+      success: true,
+      defaultModelId: 'auto'
+    })
+    if (process.platform === 'win32') {
+      expect(spawnMock).toHaveBeenCalledWith(
+        expect.stringMatching(/cmd\.exe$/i),
+        ['/d', '/c', 'cursor', 'agent', 'models'],
+        expect.objectContaining({ windowsHide: true })
+      )
+    } else {
+      expect(spawnMock).toHaveBeenCalledWith(
+        'cursor',
+        ['agent', 'models'],
+        expect.objectContaining({ windowsHide: true })
+      )
+    }
+  })
+
   it('discovers dynamic models through the selected WSL distro login shell', async () => {
     await withPlatform('win32', async () => {
       const listeners = new Map<string, (value: unknown) => void>()

@@ -86,6 +86,17 @@ describe('tui agent startup session options', () => {
     expect(plan?.sessionOptions).toEqual({ model: 'opus', effort: 'high' })
   })
 
+  it('waits on the IDE cursor process when launching cursor agent', () => {
+    const plan = buildAgentStartupPlan({
+      agent: 'cursor',
+      prompt: 'fix it',
+      cmdOverrides: { cursor: 'cursor agent' },
+      platform: 'linux'
+    })
+    expect(plan?.launchCommand.startsWith('cursor agent --trust')).toBe(true)
+    expect(plan?.expectedProcess).toBe('cursor')
+  })
+
   it('never injects session options into resume commands', () => {
     const plan = buildAgentResumeStartupPlan({
       agent: 'codex',

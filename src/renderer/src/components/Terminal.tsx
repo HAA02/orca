@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useShallow } from 'zustand/react/shallow'
 import {
   BACKGROUND_MOUNT_TERMINAL_WORKTREE_EVENT,
+  CONTINUE_AGENT_SESSION_EVENT,
   TOGGLE_TERMINAL_PANE_EXPAND_EVENT,
   type BackgroundMountTerminalWorktreeDetail
 } from '@/constants/terminal'
@@ -1592,6 +1593,20 @@ function Terminal(): React.JSX.Element | null {
     [setActiveTab]
   )
 
+  const handleContinueAgentSession = useCallback(
+    (tabId: string) => {
+      setActiveTab(tabId)
+      requestAnimationFrame(() => {
+        window.dispatchEvent(
+          new CustomEvent(CONTINUE_AGENT_SESSION_EVENT, {
+            detail: { tabId }
+          })
+        )
+      })
+    },
+    [setActiveTab]
+  )
+
   const handleActivateBrowserTab = useCallback(
     (tabId: string) => {
       const state = useAppStore.getState()
@@ -2026,6 +2041,7 @@ function Terminal(): React.JSX.Element | null {
             onSetTabColor={setTabColor}
             expandedPaneByTabId={expandedPaneByTabId}
             onTogglePaneExpand={handleTogglePaneExpand}
+            onContinueAgentSession={handleContinueAgentSession}
             editorFiles={worktreeFiles}
             browserTabs={worktreeBrowserTabs}
             activeFileId={activeFileId}

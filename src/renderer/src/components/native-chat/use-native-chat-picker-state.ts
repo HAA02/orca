@@ -21,6 +21,7 @@ import {
   type NativeChatPickerItem,
   type NativeChatSendClassification
 } from './native-chat-composer-state'
+import type { TeammateMentionOption } from '../../../../shared/native-chat-teammate-mention'
 import { useNativeChatSkills } from './use-native-chat-skills'
 import {
   emitNativeChatPickerItemAccepted,
@@ -46,6 +47,7 @@ export function useNativeChatPickerState(args: {
   draft: string
   caret: number
   agentCommands: readonly SlashCommandSuggestion[]
+  teammateOptions?: readonly TeammateMentionOption[]
   textareaRef: RefObject<HTMLTextAreaElement | null>
   setDraft: (value: string) => void
   setCaret: Dispatch<SetStateAction<number>>
@@ -58,6 +60,7 @@ export function useNativeChatPickerState(args: {
     draft,
     caret,
     agentCommands,
+    teammateOptions = [],
     textareaRef,
     setDraft,
     setCaret,
@@ -86,9 +89,10 @@ export function useNativeChatPickerState(args: {
         discovery.skills,
         profile,
         discovery,
-        dismissed?.context === dismissalContext ? dismissed.triggerKey : null
+        dismissed?.context === dismissalContext ? dismissed.triggerKey : null,
+        teammateOptions
       ),
-    [agentCommands, caret, dismissalContext, dismissed, discovery, draft, profile]
+    [agentCommands, caret, dismissalContext, dismissed, discovery, draft, profile, teammateOptions]
   )
 
   useEffect(() => {
@@ -152,16 +156,18 @@ export function useNativeChatPickerState(args: {
         agentCommands,
         discovery.skills,
         profile,
-        discovery
+        discovery,
+        null,
+        teammateOptions
       )
       if (
-        (next.mode !== 'slash' && next.mode !== 'skill') ||
+        (next.mode !== 'slash' && next.mode !== 'skill' && next.mode !== 'mention') ||
         next.triggerKey !== dismissed.triggerKey
       ) {
         setDismissed(null)
       }
     },
-    [agentCommands, dismissalContext, dismissed, discovery, draft, profile]
+    [agentCommands, dismissalContext, dismissed, discovery, draft, profile, teammateOptions]
   )
 
   const classifySend = useCallback(

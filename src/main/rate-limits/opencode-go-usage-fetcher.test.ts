@@ -10,10 +10,11 @@ import { fetchOpenCodeGoRateLimits, normalizeCookieInput } from './opencode-go-u
 
 const WORKSPACES_SERVER_ID = 'def39973159c7f0483d8793a822b8dbb10d067e12c65455fcb4608459ba0234f'
 
-function makeResponse(body: string, status = 200): Response {
+function makeResponse(body: string, status = 200, url = ''): Response {
   return {
     ok: status >= 200 && status < 300,
     status,
+    url,
     text: async () => body
   } as Response
 }
@@ -307,13 +308,93 @@ describe('fetchOpenCodeGoRateLimits', () => {
     expect(result.error).toBe('Workspaces fetch failed (401)')
   })
 
-  it('returns error when no workspace ID found in response', async () => {
-    netFetchMock.mockResolvedValueOnce(makeResponse('no workspace id here'))
+  it('finds the workspace ID inside a /workspace/<id> URL in the payload', async () => {
+    netFetchMock
+      .mockResolvedValueOnce(makeResponse('href="/workspace/wrk_FROMURL123/go"'))
+      .mockResolvedValueOnce(makeResponse(USAGE_PAGE_WITH_MONTHLY))
+
+    const result = await fetchOpenCodeGoRateLimits('auth=mytoken')
+
+    expect(result.status).toBe('ok')
+    expect(netFetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://opencode.ai/workspace/wrk_FROMURL123/go',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('falls back to the /workspace redirect URL when the payload has no id', async () => {
+    netFetchMock
+      .mockResolvedValueOnce(makeResponse('no workspace id here'))
+      .mockResolvedValueOnce(
+        makeResponse(
+          '<html>workspace shell</html>',
+          200,
+          'https://opencode.ai/workspace/wrk_FROMREDIRECT/go'
+        )
+      )
+      .mockResolvedValueOnce(makeResponse(USAGE_PAGE_WITH_MONTHLY))
+
+    const result = await fetchOpenCodeGoRateLimits('auth=mytoken')
+
+    expect(result.status).toBe('ok')
+    expect(netFetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://opencode.ai/workspace',
+      expect.objectContaining({ method: 'GET', redirect: 'follow' })
+    )
+    expect(netFetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://opencode.ai/workspace/wrk_FROMREDIRECT/go',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('falls back to the /workspace page body when the final URL carries no id', async () => {
+    netFetchMock
+      .mockResolvedValueOnce(makeResponse('no workspace id here'))
+      .mockResolvedValueOnce(makeResponse('<a href="/workspace/wrk_FROMBODY456/settings">ws</a>'))
+      .mockResolvedValueOnce(makeResponse(USAGE_PAGE_WITH_MONTHLY))
+
+    const result = await fetchOpenCodeGoRateLimits('auth=mytoken')
+
+    expect(result.status).toBe('ok')
+    expect(netFetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://opencode.ai/workspace/wrk_FROMBODY456/go',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('returns error when no workspace ID is found in the payload or fallback page', async () => {
+    netFetchMock
+      .mockResolvedValueOnce(makeResponse('no workspace id here'))
+      .mockResolvedValueOnce(makeResponse('<html>still nothing</html>'))
 
     const result = await fetchOpenCodeGoRateLimits('auth=mytoken')
 
     expect(result.status).toBe('error')
     expect(result.error).toMatch(/No workspace ID found/)
+  })
+
+  it('keeps the override guidance when the fallback discovery request fails', async () => {
+    netFetchMock
+      .mockResolvedValueOnce(makeResponse('no workspace id here'))
+      .mockRejectedValueOnce(new Error('network timeout'))
+
+    const result = await fetchOpenCodeGoRateLimits('auth=mytoken')
+
+    expect(result.status).toBe('error')
+    expect(result.error).toMatch(/No workspace ID found/)
+  })
+
+  it('skips the fallback discovery when a workspace id override is set', async () => {
+    netFetchMock.mockResolvedValueOnce(makeResponse(USAGE_PAGE_WITH_MONTHLY))
+
+    const result = await fetchOpenCodeGoRateLimits('auth=mytoken', 'wrk_OVERRIDE123')
+
+    expect(result.status).toBe('ok')
+    expect(netFetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('returns error on non-ok usage page response', async () => {

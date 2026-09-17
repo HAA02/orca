@@ -53,6 +53,9 @@ export type CatalogModel = {
 export type AgentSessionOptionCatalog = {
   models: CatalogModel[]
   modelApply: CatalogOptionApply
+  /** Opt-in exception to #9085: when true, an untouched agent launches with the
+   *  catalog default model instead of preserving the CLI's own default. */
+  launchDefaultModel?: true
   composeModelValue?: (modelId: string, values: Record<string, SessionOptionValue>) => string
   listModels?: {
     command: string

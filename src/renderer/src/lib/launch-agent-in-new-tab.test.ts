@@ -166,6 +166,27 @@ describe('launchAgentInNewTab', () => {
     mockPasteDraftWhenAgentReady.mockResolvedValue(true)
   })
 
+  it('keeps Cursor in the terminal because native chat cannot parse its transcript', async () => {
+    store.settings = {
+      agentCmdOverrides: {},
+      agentDefaultArgs: {},
+      agentDefaultEnv: {},
+      activeRuntimeEnvironmentId: null,
+      experimentalNativeChat: true,
+      openAgentTabsInChatByDefault: true
+    }
+    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
+
+    launchAgentInNewTab({
+      agent: 'cursor',
+      worktreeId: 'wt-1'
+    })
+
+    expect(mockCreateTab).toHaveBeenCalledWith('wt-1', undefined, undefined, {
+      launchAgent: 'cursor'
+    })
+  })
+
   it('stamps the launched agent on the new tab for immediate provider icon bootstrap', async () => {
     const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
 
@@ -177,6 +198,22 @@ describe('launchAgentInNewTab', () => {
     expect(mockCreateTab).toHaveBeenCalledWith('wt-1', undefined, undefined, {
       launchAgent: 'codex'
     })
+  })
+
+  it('passes teammate session option overrides into the queued startup command', async () => {
+    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
+
+    launchAgentInNewTab({
+      agent: 'codex',
+      worktreeId: 'wt-1',
+      sessionOptionsOverride: { model: 'gpt-6-astra' }
+    })
+
+    expect(mockQueueTabStartupCommand.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        sessionOptions: expect.objectContaining({ model: 'gpt-6-astra' })
+      })
+    )
   })
 
   it('opens supported submit-after-ready launches in chat and seeds a launch prompt echo', async () => {

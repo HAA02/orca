@@ -1,5 +1,6 @@
 import type { TuiAgent } from './types'
 import { isTuiAgentEnabled } from './tui-agent-selection'
+import { OPENCODE_DEFAULT_MODEL_ID } from './agent-session-option-catalog-opencode'
 
 /* eslint-disable max-lines -- Why: this is the single registry for non-interactive commit-message agents, their model discovery parsers, and UI capabilities. */
 
@@ -38,6 +39,8 @@ export type CommitMessageAgentSpec = {
     args: string[]
     parse: (stdout: string) => CommitMessageModel[]
   }
+  /** When discovery lists several models, prefer ids with this prefix. */
+  preferredModelPrefix?: string
   models: CommitMessageModel[]
   defaultModelId: string
 }
@@ -102,6 +105,21 @@ function uniqueModels(models: CommitMessageModel[]): CommitMessageModel[] {
     seen.add(model.id)
     return true
   })
+}
+
+export function pickDiscoveredDefaultModelId(
+  spec: Pick<CommitMessageAgentSpec, 'defaultModelId' | 'preferredModelPrefix'>,
+  models: readonly { id: string }[]
+): string {
+  // Why: an explicitly declared default model is a stronger signal than the
+  // provider-family prefix, so it wins whenever discovery lists it.
+  if (models.some((model) => model.id === spec.defaultModelId)) {
+    return spec.defaultModelId
+  }
+  const preferred = spec.preferredModelPrefix
+    ? models.find((model) => model.id.startsWith(spec.preferredModelPrefix!))
+    : undefined
+  return preferred?.id ?? models[0]?.id ?? spec.defaultModelId
 }
 
 function* iterateModelOutputLines(output: string): Generator<string> {
@@ -358,6 +376,12 @@ export const COMMIT_MESSAGE_AGENT_SPECS: Partial<Record<TuiAgent, CommitMessageA
     // by version so the frontier model lands on top and legacy models trail.
     models: [
       {
+        id: 'gpt-6-astra',
+        label: 'GPT-6 Astra',
+        thinkingLevels: OPENAI_THINKING_LEVELS,
+        defaultThinkingLevel: 'low'
+      },
+      {
         id: 'gpt-5.5',
         label: 'GPT-5.5',
         thinkingLevels: OPENAI_THINKING_LEVELS,
@@ -419,7 +443,20 @@ export const COMMIT_MESSAGE_AGENT_SPECS: Partial<Record<TuiAgent, CommitMessageA
     ],
     modelSource: 'dynamic',
     modelDiscovery: { binary: 'opencode', args: ['models'], parse: parseLineModels },
+    preferredModelPrefix: 'opencode-go/',
     models: [
+      {
+        id: OPENCODE_DEFAULT_MODEL_ID,
+        label: 'OpenCode Go DeepSeek V4.1 Flash'
+      },
+      {
+        id: 'opencode-go/kimi-k3',
+        label: 'OpenCode Go Kimi K3'
+      },
+      {
+        id: 'opencode-go/glm-5.2',
+        label: 'OpenCode Go GLM 5.2'
+      },
       {
         // Why: OpenCode's hosted GPT models can require workspace billing even
         // when `opencode models` lists them. This free model is available in
@@ -433,7 +470,7 @@ export const COMMIT_MESSAGE_AGENT_SPECS: Partial<Record<TuiAgent, CommitMessageA
         ...withOpenAiThinking('gpt-5.4-mini')
       }
     ],
-    defaultModelId: 'opencode/deepseek-v4-flash-free'
+    defaultModelId: OPENCODE_DEFAULT_MODEL_ID
   },
   pi: {
     id: 'pi',

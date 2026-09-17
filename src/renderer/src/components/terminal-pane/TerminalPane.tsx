@@ -160,7 +160,11 @@ import { useVisibleTerminalTabClaim } from './use-visible-terminal-tab-claim'
 import { TerminalSshReconnectOverlay } from './TerminalSshReconnectOverlay'
 import { TerminalRemoteRuntimeReconnectBanner } from './TerminalRemoteRuntimeReconnectBanner'
 import { selectTerminalTabAgentTypesByLeaf } from './terminal-tab-agent-type-index'
-import { canContinueAgentSessionInNewSession } from './terminal-agent-session-continuation'
+import {
+  canContinueAgentSessionInNewSession,
+  continueAgentSessionFromPane
+} from './terminal-agent-session-continuation'
+import { subscribeTerminalContinueAgentSession } from './terminal-continue-agent-session'
 import {
   updateTerminalRemoteRuntimeRecoveryUiState,
   type VisiblePtyRecoveryState
@@ -1731,6 +1735,30 @@ export default function TerminalPane({
     terminalShortcutPolicy: settings?.terminalShortcutPolicy ?? 'orca-first'
   })
 
+  // Why: the tab-bar "+" menu hands off the tab's active leaf, so resolve it here
+  // where the PaneManager and pane cwd live instead of duplicating pane state.
+  const handleContinueAgentSessionFromTabBar = useCallback((): void => {
+    const manager = managerRef.current
+    if (!manager) {
+      return
+    }
+    const pane = manager.getActivePane() ?? manager.getPanes()[0]
+    if (!pane) {
+      return
+    }
+    const request = continueAgentSessionFromPane({
+      pane,
+      paneCwdMap: paneCwdRef.current,
+      tabId,
+      worktreeId,
+      groupId: quickCommandGroupId,
+      workspacePath: cwd ?? ''
+    })
+    if (request) {
+      setAgentSessionContinuation(request)
+    }
+  }, [cwd, quickCommandGroupId, tabId, worktreeId])
+
   useTerminalPaneGlobalEffects({
     tabId,
     // Why: use the pane's own worktreeId prop, not global activeWorktreeId, so terminal-drop routes to this PTY's worktree without racing worktree switches.
@@ -1750,6 +1778,15 @@ export default function TerminalPane({
     isVisibleRef,
     toggleExpandPane
   })
+
+  useEffect(
+    () =>
+      subscribeTerminalContinueAgentSession({
+        tabId,
+        onContinue: handleContinueAgentSessionFromTabBar
+      }),
+    [handleContinueAgentSessionFromTabBar, tabId]
+  )
 
   useEffect(() => {
     if (

@@ -363,9 +363,20 @@ describe('resolveTerminalShortcutAction', () => {
     expect(
       resolveTerminalShortcutAction(event({ key: 'r', code: 'KeyR', ctrlKey: true }), false)
     ).toBeNull()
+    // Why: Ctrl+K/Ctrl+U are readline kill chords; only the shifted pane-clear
+    // chord belongs to Orca on Linux/Windows.
     expect(
       resolveTerminalShortcutAction(event({ key: 'k', code: 'KeyK', ctrlKey: true }), false)
+    ).toBeNull()
+    expect(
+      resolveTerminalShortcutAction(
+        event({ key: 'k', code: 'KeyK', ctrlKey: true, shiftKey: true }),
+        false
+      )
     ).toEqual({ type: 'clearActivePane' })
+    expect(
+      resolveTerminalShortcutAction(event({ key: 'u', code: 'KeyU', ctrlKey: true }), false)
+    ).toBeNull()
     expect(
       resolveTerminalShortcutAction(event({ key: 'w', code: 'KeyW', ctrlKey: true }), false)
     ).toEqual({ type: 'closeActivePane' })

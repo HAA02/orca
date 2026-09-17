@@ -40,5 +40,6 @@ describe('getAccountsMiniMaxSearchEntries', () => {
     const allEntries = getAccountsPaneSearchEntries()
     const titles = allEntries.map((entry) => entry.title)
     expect(titles).toContain('MiniMax Usage')
+    expect(titles).toContain('Cursor Accounts')
   })
 })

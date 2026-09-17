@@ -7,6 +7,7 @@ export const SPLIT_TERMINAL_PANE_EVENT = 'orca-split-terminal-pane'
 export const REQUEST_ACTIVE_TERMINAL_PANE_SPLIT_EVENT = 'orca-request-active-terminal-pane-split'
 export const CLOSE_TERMINAL_PANE_EVENT = 'orca-close-terminal-pane'
 export const BACKGROUND_MOUNT_TERMINAL_WORKTREE_EVENT = 'orca-background-mount-terminal-worktree'
+export const CONTINUE_AGENT_SESSION_EVENT = 'orca-continue-agent-session'
 
 // Why: mobile wake (experimental agent sleep) must fire the cold-restore
 // --resume of a worktree's mounted hidden hibernated panes without a desktop
@@ -48,6 +49,11 @@ export type PasteTerminalTextDetail = {
   tabId: string
   paneId?: number
   text: string
+}
+
+/** The receiving pane resolves its own active leaf, so the tab id is the only routing key. */
+export type ContinueAgentSessionDetail = {
+  tabId: string
 }
 
 export type SplitTerminalPaneDetail = {

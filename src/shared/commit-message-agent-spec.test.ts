@@ -15,8 +15,10 @@ import {
   parseCursorModels,
   parseLineModels,
   parsePiModels,
+  pickDiscoveredDefaultModelId,
   resolveCommitMessageAgentChoice
 } from './commit-message-agent-spec'
+import { OPENCODE_DEFAULT_MODEL_ID } from './agent-session-option-catalog-opencode'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -126,6 +128,7 @@ describe('COMMIT_MESSAGE_AGENT_SPECS', () => {
   it('orders Codex models by version descending to match the official picker', () => {
     const ids = COMMIT_MESSAGE_AGENT_SPECS.codex?.models.map((m) => m.id)
     expect(ids).toEqual([
+      'gpt-6-astra',
       'gpt-5.5',
       'gpt-5.4',
       'gpt-5.4-mini',
@@ -269,6 +272,40 @@ describe('model discovery parsers', () => {
         defaultThinkingLevel: 'low'
       }
     ])
+  })
+
+  it('prefers the declared OpenCode default model when discovery lists it', () => {
+    expect(COMMIT_MESSAGE_AGENT_SPECS.opencode?.preferredModelPrefix).toBe('opencode-go/')
+    expect(COMMIT_MESSAGE_AGENT_SPECS.opencode?.defaultModelId).toBe(OPENCODE_DEFAULT_MODEL_ID)
+    expect(
+      pickDiscoveredDefaultModelId(
+        {
+          defaultModelId: OPENCODE_DEFAULT_MODEL_ID,
+          preferredModelPrefix: 'opencode-go/'
+        },
+        [
+          { id: 'opencode-go/deepseek-v4-flash' },
+          { id: 'opencode-go/deepseek-v4.1-flash' },
+          { id: 'opencode-go/kimi-k3' }
+        ]
+      )
+    ).toBe(OPENCODE_DEFAULT_MODEL_ID)
+  })
+
+  it('falls back to the OpenCode Go family when the default model is not discovered', () => {
+    expect(
+      pickDiscoveredDefaultModelId(
+        {
+          defaultModelId: OPENCODE_DEFAULT_MODEL_ID,
+          preferredModelPrefix: 'opencode-go/'
+        },
+        [
+          { id: 'opencode/deepseek-v4-flash-free' },
+          { id: 'opencode-go/kimi-k3' },
+          { id: 'opencode-go/glm-5.2' }
+        ]
+      )
+    ).toBe('opencode-go/kimi-k3')
   })
 
   it('parses Antigravity model output', () => {

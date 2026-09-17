@@ -39,6 +39,7 @@ vi.mock('../../store', () => {
   const state = {
     dictationState: 'idle',
     settings: { voice: { enabled: false }, nativeChatSessionOptions: {} },
+    detectedAgentIds: [] as string[],
     updateSettings: vi.fn()
   }
   const useAppStore = (selector: (value: typeof state) => unknown) => selector(state)
@@ -73,6 +74,9 @@ vi.mock('@/lib/native-chat-telemetry', () => ({
   emitNativeChatPickerItemAccepted: vi.fn(),
   emitNativeChatPickerOpened: vi.fn(),
   emitNativeChatSendClassified: vi.fn()
+}))
+vi.mock('@/lib/native-chat-teammate-dispatch', () => ({
+  dispatchNativeChatTeammate: vi.fn()
 }))
 vi.mock('./use-native-chat-draft', () => ({
   useNativeChatDraft: (scopeKey: string) => {
