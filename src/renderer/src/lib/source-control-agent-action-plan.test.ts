@@ -52,7 +52,7 @@ describe('planSourceControlAgentActionLaunch', () => {
       platform: 'linux'
     })
 
-    expect(result.ok && result.commandLabel).toBe("codex '--model' 'gpt-5.5'")
+    expect(result.ok && result.commandLabel).toBe('codex --model gpt-5.5')
   })
 
   it.each([

@@ -76,11 +76,18 @@ function Sidebar({
 
   // Fetch worktrees when repos are added/removed
   const repoCount = repos.length
+  const hydrateRuntimeEnvironmentStatuses = useAppStore((s) => s.hydrateRuntimeEnvironmentStatuses)
   useEffect(() => {
     if (repoCount > 0) {
       fetchAllWorktrees()
     }
   }, [repoCount, fetchAllWorktrees])
+  // Why: CLI `environment add` writes the store without notifying this window.
+  // Re-list on repo changes so a just-paired host is probed before the chip
+  // and the online-host refetch treat it as gone.
+  useEffect(() => {
+    void hydrateRuntimeEnvironmentStatuses()
+  }, [hydrateRuntimeEnvironmentStatuses, repoCount])
 
   // Why: a runtime host coming online/offline must refresh the sidebar so its
   // worktrees appear/drop, the same way SSH state changes already refetch. Only

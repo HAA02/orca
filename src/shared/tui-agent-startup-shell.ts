@@ -84,6 +84,18 @@ export function quoteStartupArg(value: string, shell: AgentStartupShell): string
   return `'${value.replace(/'/g, `'\\''`)}'`
 }
 
+const POSIX_UNQUOTED_FLAG = /^--?[A-Za-z0-9][A-Za-z0-9_-]*$/
+const POSIX_UNQUOTED_VALUE = /^[A-Za-z0-9][A-Za-z0-9._/@+=-]*$/
+
+/** Quote launch CLI tokens, but leave ordinary flags/ids bare on POSIX.
+ *  Prompt quoting still uses `quoteStartupArg` so `--version` stays a value. */
+export function quoteLaunchCliArg(value: string, shell: AgentStartupShell): string {
+  if (shell === 'posix' && (POSIX_UNQUOTED_FLAG.test(value) || POSIX_UNQUOTED_VALUE.test(value))) {
+    return value
+  }
+  return quoteStartupArg(value, shell)
+}
+
 export function buildShellCommandFromArgv(
   args: readonly string[],
   shell: AgentStartupShell
@@ -125,6 +137,6 @@ export function planAgentCliArgsSuffix(
   }
   return {
     ok: true,
-    suffix: tokenized.tokens.map((token) => quoteStartupArg(token, shell)).join(' ')
+    suffix: tokenized.tokens.map((token) => quoteLaunchCliArg(token, shell)).join(' ')
   }
 }

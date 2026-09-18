@@ -27,6 +27,7 @@ import { keybindingMatchesAction } from '../../../../shared/keybindings'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import type { TerminalPreviewDataPayload } from '../../../../shared/terminal-preview'
+import { createTerminalPreviewFit } from './terminal-preview-fit'
 
 const PREVIEW_SCROLLBACK_ROWS = 24
 const FALLBACK_COLS = 80
@@ -42,11 +43,22 @@ function clamp(value: number, min: number, max: number): number {
  * headless emulator. The terminal is created at the pane's REAL cols/rows —
  * the serialized ANSI was produced at those dimensions, and replaying it into
  * a narrower terminal rewraps every full-width line into garbage. The box
- * stays fixed; the oversized terminal is scaled down to fit the width and
- * bottom-anchored so the tail (prompt, status line) stays visible. Keystrokes
- * pass through to the PTY; DOM renderer so it never grabs a WebGL context.
+ * stays fixed; the oversized terminal is scaled to fit width and height so
+ * wrapped lines are not cropped mid-token. Keystrokes pass through to the
+ * PTY; DOM renderer so it never grabs a WebGL context.
  */
-export function AgentTerminalPreview({ ptyId }: { ptyId: string }): React.JSX.Element {
+export function AgentTerminalPreview({
+  ptyId,
+  heightClassName,
+  focusOnMount = true
+}: {
+  ptyId: string
+  /** Overrides the dialog's near-fullscreen height; the split grid passes a
+   *  tile-filling box instead. */
+  heightClassName?: string
+  /** Off in the split grid so many mounting previews don't fight over focus. */
+  focusOnMount?: boolean
+}): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const settings = useAppStore((state) => state.settings)
   const systemPrefersDark = useSystemPrefersDark()
@@ -81,43 +93,14 @@ export function AgentTerminalPreview({ ptyId }: { ptyId: string }): React.JSX.El
     let retryTimer: ReturnType<typeof setTimeout> | null = null
     const pendingLivePayloads: Extract<TerminalPreviewDataPayload, { type: 'data' }>[] = []
 
-    const fitToBox = (): void => {
-      const screen = container.querySelector<HTMLElement>('.xterm-screen')
-      const box = container.parentElement
-      if (!screen || !box || !terminal) {
-        return
-      }
-      const scale = Math.min(1, box.clientWidth / Math.max(1, screen.offsetWidth))
-      container.style.transform = scale < 1 ? `scale(${scale})` : ''
-      // Anchor whichever end keeps the CURSOR row in view when the terminal is
-      // taller than the box: a fresh shell prompts at the TOP of its screen
-      // (blind bottom-anchoring clipped it away), while a busy TUI keeps its
-      // action at the bottom.
-      const cellHeight = screen.offsetHeight / Math.max(1, terminal.rows)
-      const cursorBottom = (terminal.buffer.active.cursorY + 1) * cellHeight * scale
-      const anchorTop = cursorBottom <= box.clientHeight
-      box.style.alignItems = anchorTop ? 'flex-start' : 'flex-end'
-      container.style.transformOrigin = anchorTop ? 'top left' : 'bottom left'
-    }
-    // Re-fit after every parsed write (cursor may move ends); rAF coalesces.
-    let fitScheduled = false
-    const scheduleFit = (): void => {
-      if (fitScheduled) {
-        return
-      }
-      fitScheduled = true
-      requestAnimationFrame(() => {
-        fitScheduled = false
-        fitToBox()
-      })
-    }
+    const previewFit = createTerminalPreviewFit(container, () => terminal)
 
     let replayDepth = 0
     const writeReplayed = (chunk: string, onDone?: () => void): void => {
       replayDepth++
       terminal?.write(chunk, () => {
         replayDepth--
-        scheduleFit()
+        previewFit.schedule()
         onDone?.()
       })
     }
@@ -350,8 +333,10 @@ export function AgentTerminalPreview({ ptyId }: { ptyId: string }): React.JSX.El
         // Queue behind every replay write so replacement never clears a half-parsed frame.
         writeReplayed('', requestRefresh)
       }
-      scheduleFit()
-      terminal.focus()
+      previewFit.schedule()
+      if (focusOnMount) {
+        terminal.focus()
+      }
     }
 
     const setup = async (replaceExisting = false): Promise<void> => {
@@ -420,18 +405,22 @@ export function AgentTerminalPreview({ ptyId }: { ptyId: string }): React.JSX.El
       offData?.()
       userInputDisposable?.dispose()
       disposeImeNativeTextBridge()
+      previewFit.dispose()
       void window.api.terminalPreview.unsubscribe(ptyId)
       terminal?.dispose()
     }
-  }, [ptyId, terminalTheme])
+  }, [focusOnMount, ptyId, terminalTheme])
 
   return (
     // Why: a size FIXED by the viewport (not shrink-to-fit) + overflow-hidden
     // keeps the dialog stable no matter how wide/tall the pane's serialized
-    // buffer is. The terminal keeps the pane's true dimensions and is scaled/
-    // clipped to fit; fitToBox anchors whichever end keeps the cursor in view.
+    // buffer is. The terminal keeps the pane's true dimensions and is scaled
+    // to fit the box on both axes.
     <div
-      className="relative h-[calc(100vh-140px)] w-full overflow-hidden bg-background p-1.5"
+      className={cn(
+        'relative w-full overflow-hidden bg-background p-1.5',
+        heightClassName ?? 'h-[calc(100vh-140px)]'
+      )}
       style={terminalTheme?.background ? { backgroundColor: terminalTheme.background } : undefined}
     >
       {ptyGone ? (
@@ -444,9 +433,9 @@ export function AgentTerminalPreview({ ptyId }: { ptyId: string }): React.JSX.El
       ) : null}
       <div
         aria-hidden={ptyGone || undefined}
-        className={cn('flex h-full w-full items-end overflow-hidden', ptyGone && 'invisible')}
+        className={cn('flex h-full w-full items-start overflow-hidden', ptyGone && 'invisible')}
       >
-        <div ref={containerRef} className="origin-bottom-left" />
+        <div ref={containerRef} className="origin-top-left" />
       </div>
     </div>
   )

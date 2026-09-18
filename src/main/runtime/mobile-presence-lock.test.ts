@@ -544,6 +544,36 @@ describe('mobile presence lock — multi-mobile semantics', () => {
     expect(ptySizes.get('pty-1')).toEqual({ cols: 132, rows: 44 })
   })
 
+  it('updateMobileViewport swallows ±1 cell FitAddon jitter on an already-fitted phone PTY', async () => {
+    const { runtime, ptySizes, resizes } = createRuntime()
+    await runtime.handleMobileSubscribe('pty-1', 'phone-A', { cols: 49, rows: 38 })
+    resizes.length = 0
+
+    // A scrollbar/fractional-pixel wobble must not SIGWINCH the shared PTY.
+    await expect(
+      runtime.updateMobileViewport('pty-1', 'phone-A', { cols: 50, rows: 38 })
+    ).resolves.toEqual({ updated: true, applied: false })
+    expect(ptySizes.get('pty-1')).toEqual({ cols: 49, rows: 38 })
+    expect(resizes).toEqual([])
+
+    // A genuine layout change (more than one cell) still applies.
+    await expect(
+      runtime.updateMobileViewport('pty-1', 'phone-A', { cols: 60, rows: 38 })
+    ).resolves.toEqual({ updated: true, applied: true })
+    expect(ptySizes.get('pty-1')).toEqual({ cols: 60, rows: 38 })
+  })
+
+  it('updateMobileViewport applies the first phone fit even at a ±1 cell delta', async () => {
+    const { runtime, ptySizes } = createRuntime()
+    // Viewport-less subscribe records the subscriber without a phone layout.
+    await runtime.handleMobileSubscribe('pty-1', 'phone-A')
+
+    await expect(
+      runtime.updateMobileViewport('pty-1', 'phone-A', { cols: 149, rows: 40 })
+    ).resolves.toEqual({ updated: true, applied: true })
+    expect(ptySizes.get('pty-1')).toEqual({ cols: 149, rows: 40 })
+  })
+
   it('updateMobileViewport then disconnect restores PTY to original baseline', async () => {
     const { runtime, ptySizes } = createRuntime()
     await runtime.handleMobileSubscribe('pty-1', 'phone-A', { cols: 49, rows: 38 })

@@ -13730,6 +13730,15 @@
     },
     "title": "Agents",
     "total": "{{count}} total",
+    "running": "{{count}} running",
+    "view": {
+      "switch": "Dashboard view",
+      "kanban": "Board",
+      "split": "Split terminals"
+    },
+    "split": {
+      "empty": "No running CLIs — start an agent to see its terminal here."
+    },
     "card": {
       "you": "You",
       "time": {

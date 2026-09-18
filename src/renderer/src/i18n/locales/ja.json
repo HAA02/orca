@@ -13720,6 +13720,15 @@
       "closed": "No live terminal — this agent's pane has closed.",
       "focusWorktree": "Focus worktree",
       "close": "Close"
+    },
+    "running": "{{count}} running",
+    "view": {
+      "switch": "Dashboard view",
+      "kanban": "Board",
+      "split": "Split terminals"
+    },
+    "split": {
+      "empty": "No running CLIs — start an agent to see its terminal here."
     }
   },
   "dashboard": {

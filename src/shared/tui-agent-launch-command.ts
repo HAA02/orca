@@ -4,7 +4,7 @@ import type { SessionOptionValue } from './native-chat-session-options'
 import { getTuiAgentLaunchCommand, TUI_AGENT_CONFIG } from './tui-agent-config'
 import {
   planAgentCliArgsSuffix,
-  quoteStartupArg,
+  quoteLaunchCliArg,
   tokenizeStartupCommand,
   type AgentStartupShell
 } from './tui-agent-startup-shell'
@@ -52,7 +52,9 @@ export function resolveAgentLaunchCommand(args: {
     args.sessionOptions,
     trailingTokens.tokens
   )
-  const optionSuffix = resolvedOptions.args.map((arg) => quoteStartupArg(arg, args.shell)).join(' ')
+  const optionSuffix = resolvedOptions.args
+    .map((arg) => quoteLaunchCliArg(arg, args.shell))
+    .join(' ')
   const commandWithOptions = optionSuffix ? `${command} ${optionSuffix}` : command
   const commandWithoutSessionOptions = suffix.suffix ? `${command} ${suffix.suffix}` : command
   // Why: session flags precede the free-form suffix so the user's explicit

@@ -96,16 +96,15 @@ describe('activateAndRevealWorktree created agent reopen', () => {
     expect(result).toEqual({ primaryTabId: reopenedTab?.id })
     expect(reopenedTab).toBeDefined()
     expect(state.pendingStartupByTabId[reopenedTab!.id]).toEqual({
-      command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+      command: 'codex --dangerously-bypass-approvals-and-sandbox',
       env: {},
       launchAgent: 'codex',
       launchConfig: {
-        agentCommand: "codex '--dangerously-bypass-approvals-and-sandbox'",
+        agentCommand: 'codex --dangerously-bypass-approvals-and-sandbox',
         agentArgs: '--dangerously-bypass-approvals-and-sandbox',
         agentEnv: {}
       },
       launchToken: expect.any(String),
-      sessionOptions: undefined,
       telemetry: {
         agent_kind: 'codex',
         launch_source: 'sidebar',

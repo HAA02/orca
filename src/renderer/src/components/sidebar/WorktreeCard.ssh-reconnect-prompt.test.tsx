@@ -148,13 +148,26 @@ describe('WorktreeCard SSH reconnect prompt', () => {
     expect(markup).toContain('SSH disconnected')
   })
 
-  it('marks a runtime-host worktree disconnected when its environment has no status', () => {
+  it('does not mark a runtime-host worktree disconnected before the environment is probed', () => {
     const runtimeRepo: Repo = {
       ...makeRepo(),
       connectionId: undefined,
       executionHostId: 'runtime:env-1'
     }
-    // No status entry for env-1 → host is disconnected.
+    const markup = renderToStaticMarkup(
+      <WorktreeCard worktree={makeWorktree()} repo={runtimeRepo} isActive={false} />
+    )
+    expect(markup).not.toContain('Server disconnected')
+    expect(markup).toContain('Project on Orca server')
+  })
+
+  it('marks a runtime-host worktree disconnected after a failed environment probe', () => {
+    runtimeStatusByEnvironmentId.set('env-1', { status: null })
+    const runtimeRepo: Repo = {
+      ...makeRepo(),
+      connectionId: undefined,
+      executionHostId: 'runtime:env-1'
+    }
     const markup = renderToStaticMarkup(
       <WorktreeCard worktree={makeWorktree()} repo={runtimeRepo} isActive={false} />
     )

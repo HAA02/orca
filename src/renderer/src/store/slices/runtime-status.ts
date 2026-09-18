@@ -159,6 +159,17 @@ export const createRuntimeStatusSlice: StateCreator<AppState, [], [], RuntimeSta
       get().setRuntimeEnvironmentStatus(environmentId, { status, checkedAt: Date.now() })
       return true
     } catch {
+      const previous = get().runtimeStatusByEnvironmentId.get(environmentId)
+      // Why: a single timed-out status.get must not drop the host from the
+      // sidebar "online" set — that refetch remounts remote PTYs and relaunches
+      // TUI agents (Cursor Agent reprinting its banner in a loop).
+      if (previous?.status) {
+        get().setRuntimeEnvironmentStatus(environmentId, {
+          status: previous.status,
+          checkedAt: Date.now()
+        })
+        return false
+      }
       get().setRuntimeEnvironmentStatus(environmentId, {
         status: null,
         checkedAt: Date.now()

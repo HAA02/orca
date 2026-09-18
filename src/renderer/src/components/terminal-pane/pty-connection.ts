@@ -55,6 +55,7 @@ import {
   safeFitAndThen,
   type SafeFitContinuationHandle
 } from '@/lib/pane-manager/pane-tree-ops'
+import { confirmForegroundGridDrift } from '@/lib/pane-manager/foreground-grid-drift'
 import { requestStablePaneFit } from '@/lib/pane-manager/pane-fit-resize-observer'
 import { getFitOverrideForPty, bindPanePtyId } from '@/lib/pane-manager/mobile-fit-overrides'
 import { isPtyLocked } from '@/lib/pane-manager/mobile-driver-state'
@@ -3820,6 +3821,7 @@ export function connectPanePty(
   })
   let pendingForegroundGridDriftCheckRaf: number | null = null
   let lastForegroundGridDriftCheckAt = Number.NEGATIVE_INFINITY
+  let pendingForegroundGridDriftProposal: { cols: number; rows: number } | null = null
   const readProposedTerminalGrid = (): { cols: number; rows: number } | null => {
     try {
       const proposed = pane.fitAddon.proposeDimensions()
@@ -3832,10 +3834,13 @@ export function connectPanePty(
     }
   }
   const terminalGridDriftedFromFit = (): boolean => {
-    const proposed = readProposedTerminalGrid()
-    return Boolean(
-      proposed && (pane.terminal.cols !== proposed.cols || pane.terminal.rows !== proposed.rows)
+    const verdict = confirmForegroundGridDrift(
+      pendingForegroundGridDriftProposal,
+      { cols: pane.terminal.cols, rows: pane.terminal.rows },
+      readProposedTerminalGrid()
     )
+    pendingForegroundGridDriftProposal = verdict.pending
+    return verdict.apply
   }
   const scheduleForegroundGridDriftCheck = (): void => {
     // Why: mobile-owned PTYs intentionally keep a non-desktop grid; drift

@@ -114,7 +114,7 @@ describe('launchAgentBackgroundSession', () => {
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/repo/worktree',
-        command: "claude '--dangerously-skip-permissions' 'run the automation'",
+        command: "claude --dangerously-skip-permissions 'run the automation'",
         env: expect.objectContaining({
           ORCA_TAB_ID: 'tab-1',
           ORCA_WORKTREE_ID: 'wt-1'
@@ -137,7 +137,7 @@ describe('launchAgentBackgroundSession', () => {
     expect(mockSetTabLayout.mock.calls.at(-1)?.[1]).not.toHaveProperty('titlesByLeafId')
     expect(mockSpawn.mock.calls[0]?.[0]).toMatchObject({
       launchConfig: {
-        agentCommand: "claude '--dangerously-skip-permissions'",
+        agentCommand: 'claude --dangerously-skip-permissions',
         agentArgs: '--dangerously-skip-permissions',
         agentEnv: {}
       },
@@ -260,7 +260,7 @@ describe('launchAgentBackgroundSession', () => {
 
   it('records effective launch config returned by local PTY spawn', async () => {
     const effectiveLaunchConfig = {
-      agentCommand: "claude '--dangerously-skip-permissions'",
+      agentCommand: 'claude --dangerously-skip-permissions',
       agentArgs: '--dangerously-skip-permissions',
       agentEnv: { ORCA_AGENT_TEAMS_TEAM_ID: 'team-fresh' }
     }
@@ -314,7 +314,7 @@ describe('launchAgentBackgroundSession', () => {
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: 'C:\\Users\\jinwo\\repo\\feature',
-        command: "claude '--dangerously-skip-permissions' 'don'\\''t use powershell quoting'",
+        command: "claude --dangerously-skip-permissions 'don'\\''t use powershell quoting'",
         connectionId: null,
         worktreeId: 'wt-1',
         tabId: 'tab-1'
@@ -415,7 +415,7 @@ describe('launchAgentBackgroundSession', () => {
       { connectionId: 'ssh-a' },
       {
         launchConfig: {
-          agentCommand: "command-code --trust '--yolo'",
+          agentCommand: 'command-code --trust --yolo',
           agentArgs: '--yolo',
           agentEnv: {}
         },
@@ -475,7 +475,7 @@ describe('launchAgentBackgroundSession', () => {
     })
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      expect.objectContaining({ command: "aider '--yes-always'" })
+      expect.objectContaining({ command: 'aider --yes-always' })
     )
     expect(mockPasteDraftWhenAgentReady).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -557,7 +557,7 @@ describe('launchAgentBackgroundSession', () => {
       })
 
       expect(mockSpawn.mock.calls[0]?.[0]?.command).toBe(
-        "claude '--dangerously-skip-permissions' 'run the automation'"
+        "claude --dangerously-skip-permissions 'run the automation'"
       )
       expect(mockSpawn.mock.calls[0]?.[0]?.startupCommandDelivery).toBeUndefined()
       const dataSidecar = mockSubscribeToPtyData.mock.calls[0]?.[1] as (data: string) => void
@@ -566,7 +566,7 @@ describe('launchAgentBackgroundSession', () => {
 
       expect(mockWrite).toHaveBeenCalledWith(
         'pty-1',
-        "claude '--dangerously-skip-permissions' 'run the automation'\r"
+        "claude --dangerously-skip-permissions 'run the automation'\r"
       )
     } finally {
       vi.useRealTimers()
@@ -588,7 +588,7 @@ describe('launchAgentBackgroundSession', () => {
 
       expect(mockSpawn.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          command: "codex '--dangerously-bypass-approvals-and-sandbox' 'run the automation'",
+          command: "codex --dangerously-bypass-approvals-and-sandbox 'run the automation'",
           startupCommandDelivery: 'shell-ready'
         })
       )
@@ -602,7 +602,7 @@ describe('launchAgentBackgroundSession', () => {
 
       expect(mockWrite).toHaveBeenCalledWith(
         'pty-1',
-        "codex '--dangerously-bypass-approvals-and-sandbox' 'run the automation'\r"
+        "codex --dangerously-bypass-approvals-and-sandbox 'run the automation'\r"
       )
     } finally {
       vi.useRealTimers()
@@ -629,7 +629,7 @@ describe('launchAgentBackgroundSession', () => {
       expect(mockSpawn.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
           command:
-            "codex --prefill 'draft from override' '--dangerously-bypass-approvals-and-sandbox'"
+            "codex --prefill 'draft from override' --dangerously-bypass-approvals-and-sandbox"
         })
       )
       expect(mockSpawn.mock.calls[0]?.[0]).not.toHaveProperty('startupCommandDelivery')
@@ -643,7 +643,7 @@ describe('launchAgentBackgroundSession', () => {
 
       expect(mockWrite).toHaveBeenCalledWith(
         'pty-1',
-        "codex --prefill 'draft from override' '--dangerously-bypass-approvals-and-sandbox'\r"
+        "codex --prefill 'draft from override' --dangerously-bypass-approvals-and-sandbox\r"
       )
     } finally {
       vi.useRealTimers()
@@ -695,7 +695,7 @@ describe('launchAgentBackgroundSession', () => {
     expect(mockRegisterAgentLaunchConfig).toHaveBeenCalledWith(
       `tab-1:${leafId}`,
       {
-        agentCommand: "claude '--dangerously-skip-permissions'",
+        agentCommand: 'claude --dangerously-skip-permissions',
         agentArgs: '--dangerously-skip-permissions',
         agentEnv: {}
       },
@@ -783,7 +783,7 @@ describe('launchAgentBackgroundSession', () => {
         method: 'terminal.create',
         params: expect.objectContaining({
           worktree: 'id:wt-1',
-          command: "claude '--dangerously-skip-permissions' 'run remotely'",
+          command: "claude --dangerously-skip-permissions 'run remotely'",
           launchAgent: 'claude',
           presentation: 'background'
         })

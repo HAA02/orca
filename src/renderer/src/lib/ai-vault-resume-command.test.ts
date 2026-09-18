@@ -338,10 +338,10 @@ describe('ai vault resume command runtime', () => {
       })
     ).toEqual({
       command:
-        "cd '/home/alice/repo' && claude '--dangerously-skip-permissions' '--effort' 'max' '--resume' 'session-1'",
+        "cd '/home/alice/repo' && claude --dangerously-skip-permissions --effort max '--resume' 'session-1'",
       env: { ANTHROPIC_BASE_URL: 'https://claude.example.test' },
       launchConfig: {
-        agentCommand: "claude '--dangerously-skip-permissions' '--effort' 'max'",
+        agentCommand: 'claude --dangerously-skip-permissions --effort max',
         agentArgs: '--dangerously-skip-permissions --effort max',
         agentEnv: { ANTHROPIC_BASE_URL: 'https://claude.example.test' }
       },

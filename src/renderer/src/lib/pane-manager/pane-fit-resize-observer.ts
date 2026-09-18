@@ -1,4 +1,5 @@
 import type { ManagedPane, ManagedPaneInternal } from './pane-manager-types'
+import { isFitAddonCellJitter, paneLayoutBoxUnchanged } from './foreground-grid-drift'
 import { cancelPendingSafeFitContinuations, safeFitAndThen } from './pane-tree-ops'
 
 type ProposedDimensions = {
@@ -12,6 +13,7 @@ type StableFitPane = ManagedPane &
 const MAX_STABILITY_FRAMES = 8
 const pendingStableFitRafIds = new WeakMap<StableFitPane, number>()
 const stableFitCallbacks = new WeakMap<StableFitPane, Set<() => void>>()
+const lastOuterLayoutByPane = new WeakMap<StableFitPane, { width: number; height: number }>()
 
 function getPendingObservedFitRafId(pane: StableFitPane): number | null {
   return pane.pendingObservedFitRafId ?? pendingStableFitRafIds.get(pane) ?? null
@@ -54,6 +56,30 @@ function hasVisibleFitGeometry(pane: StableFitPane): boolean {
   return !rect || (rect.width > 0 && rect.height > 0)
 }
 
+function readOuterLayout(pane: StableFitPane): { width: number; height: number } | null {
+  const rect = pane.container?.getBoundingClientRect?.()
+  if (!rect) {
+    return null
+  }
+  return { width: rect.width, height: rect.height }
+}
+
+function outerPaneLayoutChanged(pane: StableFitPane): boolean {
+  return !paneLayoutBoxUnchanged(lastOuterLayoutByPane.get(pane), readOuterLayout(pane))
+}
+
+function rememberOuterLayout(pane: StableFitPane): void {
+  const current = readOuterLayout(pane)
+  if (current) {
+    lastOuterLayoutByPane.set(pane, current)
+  }
+}
+
+function abortStableFit(pane: StableFitPane): void {
+  setPendingObservedFitRafId(pane, null)
+  stableFitCallbacks.delete(pane)
+}
+
 function addStableFitCallback(pane: StableFitPane, callback: (() => void) | undefined): void {
   if (!callback) {
     return
@@ -93,9 +119,11 @@ export function requestStablePaneFit(pane: StableFitPane, onSettled?: () => void
   // Why: keep xterm fit work off the divider pointermove hot path and let
   // the browser coalesce drag-driven size changes the same way Superset does.
   //
-  // Windows can report a short-lived one-column anchor/scrollbar wobble when
-  // the right sidebar is open. Requiring a stable proposed grid before fitting
-  // prevents Codex from receiving a rapid SIGWINCH loop and visibly vibrating.
+  // A FitAddon ±1 cell (scrollbar gutter or extra row) can sit still for the
+  // whole AI stream. Adopting it SIGWINCHes the TUI into wrap / a CLI that
+  // grows downward. Ignore that jitter unless the outer pane box actually moved.
+  const paneResized = outerPaneLayoutChanged(pane)
+  rememberOuterLayout(pane)
   let previous = getProposedDimensions(pane)
   let frameCount = 0
   const waitForStableGrid = (): void => {
@@ -103,8 +131,7 @@ export function requestStablePaneFit(pane: StableFitPane, onSettled?: () => void
       pane,
       requestAnimationFrame(() => {
         if (!hasVisibleFitGeometry(pane)) {
-          setPendingObservedFitRafId(pane, null)
-          stableFitCallbacks.delete(pane)
+          abortStableFit(pane)
           return
         }
         const next = getProposedDimensions(pane)
@@ -120,6 +147,14 @@ export function requestStablePaneFit(pane: StableFitPane, onSettled?: () => void
           return
         }
 
+        if (
+          !paneResized &&
+          isFitAddonCellJitter({ cols: pane.terminal.cols, rows: pane.terminal.rows }, next)
+        ) {
+          abortStableFit(pane)
+          return
+        }
+
         if (dimensionsEqual(previous, next)) {
           finishStableFit(pane)
           return
@@ -127,7 +162,7 @@ export function requestStablePaneFit(pane: StableFitPane, onSettled?: () => void
 
         previous = next
         if (frameCount >= MAX_STABILITY_FRAMES) {
-          finishStableFit(pane)
+          abortStableFit(pane)
           return
         }
 
@@ -149,7 +184,8 @@ export function attachPaneFitResizeObserver(pane: ManagedPaneInternal): void {
     requestStablePaneFit(pane)
   })
 
-  observer.observe(pane.xtermContainer)
+  // Why: xtermContainer shrinks when a scrollbar appears; the outer pane does not.
+  observer.observe(pane.container)
   pane.fitResizeObserver = observer
 }
 

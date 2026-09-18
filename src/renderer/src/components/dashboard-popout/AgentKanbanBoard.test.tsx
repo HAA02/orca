@@ -124,6 +124,13 @@ describe('AgentKanbanBoard', () => {
     expect(names).toEqual(['new-move', 'mid-move', 'old-move'])
   })
 
+  it('switches to the split view from the header toggle when wired', () => {
+    const onShowSplit = vi.fn()
+    render(<AgentKanbanBoard snapshot={{ generatedAt: 1, cards: [] }} onShowSplit={onShowSplit} />)
+    fireEvent.click(screen.getByLabelText('Split terminals'))
+    expect(onShowSplit).toHaveBeenCalledTimes(1)
+  })
+
   it('does not start the clock when no card renders a relative timestamp', () => {
     vi.useFakeTimers()
     vi.setSystemTime(100_000)

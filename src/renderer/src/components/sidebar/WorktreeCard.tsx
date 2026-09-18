@@ -82,6 +82,7 @@ import { translate } from '@/i18n/i18n'
 import { recordRendererCrashBreadcrumb } from '@/lib/crash-diagnostics'
 import { folderWorkspaceKey, parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { isRuntimeOwnedSshTargetId, parseExecutionHostId } from '../../../../shared/execution-host'
+import { isRuntimeHostChipDisconnected } from '@/lib/runtime-host-sidebar-status'
 import { DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE } from '../../../../shared/constants'
 
 type WorktreeRenameRequest = {
@@ -345,13 +346,14 @@ const WorktreeCard = React.memo(function WorktreeCard({
     (s) => (s.activeTabTypeByWorktree?.[worktree.id] ?? 'terminal') === 'terminal'
   )
 
-  // Why: runtime ("Orca server") hosts get the same disconnected dimming as SSH when their environment has no live status.
+  // Why: runtime hosts only dim after a failed probe. Missing status is
+  // "not checked yet" (CLI pairing can land worktrees before GUI hydration).
   const isRuntimeDisconnected = useAppStore((s) => {
     const parsed = parseExecutionHostId(repo?.executionHostId)
     if (parsed?.kind !== 'runtime') {
       return false
     }
-    return !s.runtimeStatusByEnvironmentId.get(parsed.environmentId)?.status
+    return isRuntimeHostChipDisconnected(s.runtimeStatusByEnvironmentId.get(parsed.environmentId))
   })
   // Why: the reconnect dialog blocks, so it never auto-shows for the active card (would steal app-wide focus); opens only on deliberate focus (handleClick).
   const [showDisconnectedDialog, setShowDisconnectedDialog] = useState(false)

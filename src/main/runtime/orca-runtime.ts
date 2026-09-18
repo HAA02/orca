@@ -27,6 +27,7 @@ import type {
 } from '../../shared/terminal-side-effect-facts'
 import type { TerminalGitHubPRLink } from '../../shared/terminal-github-pr-link-detector'
 import { TerminalKittyKeyboardModeTracker } from '../../shared/terminal-kitty-keyboard-mode-tracker'
+import { isTerminalGridJitter } from '../../shared/terminal-grid-jitter'
 import {
   AGENT_STATUS_STALE_AFTER_MS,
   isFreshNonDoneAgentStatus,
@@ -11054,6 +11055,27 @@ export class OrcaRuntimeService {
       driveViewport.cols,
       driveViewport.rows
     )
+
+    // Why: FitAddon re-measures on every observer tick and can wobble ±1 cell
+    // from a scrollbar/fractional pixel. Once this PTY is already phone-fitted
+    // by the winner, adopting that wobble SIGWINCHes the TUI and makes the
+    // desktop and phone trade reflows. Swallow the nudge; a real layout change
+    // moves by more than a cell.
+    const currentSize = this.getTerminalSize(ptyId)
+    if (
+      this.layouts.get(ptyId)?.kind === 'phone' &&
+      winner.clientId === clientId &&
+      currentSize &&
+      isTerminalGridJitter(
+        { cols: currentSize.cols, rows: currentSize.rows },
+        { cols: clampedCols, rows: clampedRows }
+      )
+    ) {
+      // Why: the PTY is already phone-fitted, so this subscriber still counts
+      // as fitted for later restore-baseline selection even though we skip.
+      sub.wasResizedToPhone = true
+      return { updated: true, applied: false }
+    }
 
     sub.wasResizedToPhone = true
     // The driver is already mobile{this client} when we got here; refresh

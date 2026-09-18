@@ -630,9 +630,7 @@ describe('tui agent startup plans', () => {
       platform: 'linux'
     })
 
-    expect(plan?.launchCommand).toBe(
-      "claude '--model' 'sonnet' '--add-dir' 'path with spaces' 'fix it'"
-    )
+    expect(plan?.launchCommand).toBe("claude --model sonnet --add-dir 'path with spaces' 'fix it'")
   })
 
   it('uses PowerShell quoting for CLI arguments on Windows', () => {
@@ -735,7 +733,7 @@ describe('tui agent startup plans', () => {
       platform: 'linux'
     })
 
-    expect(plan?.launchCommand).toBe("kiro-cli chat --tui '--trust-all-tools'")
+    expect(plan?.launchCommand).toBe('kiro-cli chat --tui --trust-all-tools')
   })
 
   it('launches Continue through the documented cn binary', () => {
@@ -747,7 +745,7 @@ describe('tui agent startup plans', () => {
       platform: 'linux'
     })
 
-    expect(plan?.launchCommand).toBe("cn '--allow' '*'")
+    expect(plan?.launchCommand).toBe("cn --allow '*'")
   })
 
   it('clears draft environment variables with the target shell syntax', () => {
@@ -822,11 +820,11 @@ describe('tui agent startup plans', () => {
     })
     expect(plan).toEqual({
       agent: 'devin',
-      launchCommand: "devin '--permission-mode' 'bypass'",
+      launchCommand: 'devin --permission-mode bypass',
       expectedProcess: 'devin',
       followupPrompt: 'fix the tests',
       launchConfig: {
-        agentCommand: "devin '--permission-mode' 'bypass'",
+        agentCommand: 'devin --permission-mode bypass',
         agentArgs: '--permission-mode bypass',
         agentEnv: {}
       }

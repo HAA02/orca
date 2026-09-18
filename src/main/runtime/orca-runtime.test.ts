@@ -4777,7 +4777,7 @@ describe('OrcaRuntimeService', () => {
       expect(spawn).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: '/remote/agent-feature',
-          command: "codex '--dangerously-bypass-approvals-and-sandbox' 'hi'",
+          command: "codex --dangerously-bypass-approvals-and-sandbox 'hi'",
           worktreeId: result.worktree.id
         })
       )
@@ -4888,7 +4888,7 @@ describe('OrcaRuntimeService', () => {
       expect(spawn).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: 'C:/remote/agent-feature',
-          command: "codex '--dangerously-bypass-approvals-and-sandbox' 'fix Bob''s branch'"
+          command: "codex --dangerously-bypass-approvals-and-sandbox 'fix Bob''s branch'"
         })
       )
       expect(addWorktree).not.toHaveBeenCalled()
@@ -10729,7 +10729,7 @@ describe('OrcaRuntimeService', () => {
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
         command: expect.stringMatching(
-          /^host-claude '--model' 'opus'.*'--permission-mode' 'plan'.*--prefill 'review before sending'/
+          /^host-claude --model opus.*--permission-mode plan.*--prefill 'review before sending'/
         ),
         env: expect.objectContaining({ HOST_PROFILE: 'true' })
       })
@@ -10765,7 +10765,7 @@ describe('OrcaRuntimeService', () => {
     const spawnCall = spawn.mock.calls[0]?.[0] as
       | { command?: string; env?: Record<string, string> }
       | undefined
-    expect(spawnCall?.command).toBe("codex '--dangerously-bypass-approvals-and-sandbox'")
+    expect(spawnCall?.command).toBe('codex --dangerously-bypass-approvals-and-sandbox')
     expect(spawnCall?.env).toMatchObject({
       CODEX_PROFILE: 'captured',
       ORCA_WORKTREE_ID: TEST_WORKTREE_ID
@@ -10891,7 +10891,7 @@ describe('OrcaRuntimeService', () => {
 
     const spawnCall = spawn.mock.calls[0]?.[0] as { command?: string } | undefined
     expect(spawnCall?.command).toBe(
-      "codex --profile work '--dangerously-bypass-approvals-and-sandbox'"
+      'codex --profile work --dangerously-bypass-approvals-and-sandbox'
     )
   })
 
@@ -11007,11 +11007,11 @@ describe('OrcaRuntimeService', () => {
       'terminal:requestTabCreate',
       expect.objectContaining({
         worktreeId: TEST_WORKTREE_ID,
-        command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+        command: 'codex --dangerously-bypass-approvals-and-sandbox',
         env: { CODEX_PROFILE: 'captured' },
         launchAgent: 'codex',
         launchConfig: {
-          agentCommand: "codex '--dangerously-bypass-approvals-and-sandbox'",
+          agentCommand: 'codex --dangerously-bypass-approvals-and-sandbox',
           agentArgs: '--dangerously-bypass-approvals-and-sandbox',
           agentEnv: { CODEX_PROFILE: 'captured' }
         }
@@ -11242,7 +11242,7 @@ describe('OrcaRuntimeService', () => {
     expect(compoundClaude.env?.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS).toBeUndefined()
     expect(compoundClaude.env?.TMUX).toBeUndefined()
 
-    expect(normalAgent.command).toBe("codex '--dangerously-bypass-approvals-and-sandbox'")
+    expect(normalAgent.command).toBe('codex --dangerously-bypass-approvals-and-sandbox')
     expect(normalAgent.env?.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS).toBeUndefined()
     expect(normalAgent.env?.TMUX).toBeUndefined()
   })
@@ -11629,7 +11629,7 @@ describe('OrcaRuntimeService', () => {
     })
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
-        command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+        command: 'codex --dangerously-bypass-approvals-and-sandbox',
         cwd: TEST_WORKTREE_PATH,
         worktreeId: TEST_WORKTREE_ID
       })
@@ -11698,7 +11698,7 @@ describe('OrcaRuntimeService', () => {
       expect.objectContaining({
         requestId: expect.any(String),
         worktreeId: TEST_WORKTREE_ID,
-        command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+        command: 'codex --dangerously-bypass-approvals-and-sandbox',
         title: 'Renderer Terminal'
       })
     )
@@ -22916,7 +22916,7 @@ describe('OrcaRuntimeService', () => {
 
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
-        command: "command-code --profile mobile '--yolo'",
+        command: 'command-code --profile mobile --yolo',
         cwd: TEST_WORKTREE_PATH,
         env: expect.objectContaining({
           COMMAND_CODE_PROFILE: 'mobile-env'
@@ -23024,7 +23024,7 @@ describe('OrcaRuntimeService', () => {
 
       expect(spawn).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: "command-code --profile mobile '--note' 'can'\\''t'",
+          command: "command-code --profile mobile --note 'can'\\''t'",
           cwd: TEST_WORKTREE_PATH,
           worktreeId: TEST_WORKTREE_ID
         })
@@ -30466,7 +30466,7 @@ describe('OrcaRuntimeService', () => {
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/tmp/workspaces/runtime-startup-draft',
-        command: "codex --profile work '--dangerously-bypass-approvals-and-sandbox'",
+        command: 'codex --profile work --dangerously-bypass-approvals-and-sandbox',
         worktreeId: result.worktree.id
       })
     )
@@ -30569,7 +30569,7 @@ describe('OrcaRuntimeService', () => {
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/tmp/workspaces/runtime-cli-agent-startup',
-        command: "codex '--dangerously-bypass-approvals-and-sandbox' 'hi'",
+        command: "codex --dangerously-bypass-approvals-and-sandbox 'hi'",
         worktreeId: result.worktree.id
       })
     )
@@ -30638,7 +30638,7 @@ describe('OrcaRuntimeService', () => {
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/tmp/workspaces/runtime-cli-aider-startup',
-        command: "aider '--yes-always'",
+        command: 'aider --yes-always',
         worktreeId: result.worktree.id
       })
     )
@@ -31064,7 +31064,7 @@ describe('OrcaRuntimeService', () => {
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/tmp/workspaces/runtime-explicit-draft',
-        command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+        command: 'codex --dangerously-bypass-approvals-and-sandbox',
         worktreeId: result.worktree.id
       })
     )
@@ -31237,7 +31237,7 @@ describe('OrcaRuntimeService', () => {
     expect(spawn).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/remote/mobile-startup-draft',
-        command: `claude '--dangerously-skip-permissions' --prefill '${draftUrl}'`,
+        command: `claude --dangerously-skip-permissions --prefill '${draftUrl}'`,
         connectionId: 'ssh-1',
         worktreeId: result.worktree.id
       })
@@ -31348,7 +31348,7 @@ describe('OrcaRuntimeService', () => {
       expect(spawn).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: '/remote/mobile-codex-draft',
-          command: "codex '--dangerously-bypass-approvals-and-sandbox'",
+          command: 'codex --dangerously-bypass-approvals-and-sandbox',
           connectionId: 'ssh-1',
           worktreeId: result.worktree.id
         })

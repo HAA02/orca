@@ -40,7 +40,10 @@ function flushAnimationFrames(timestamp = 16): void {
 
 function createPane(
   proposeDimensions: () => { cols: number; rows: number } = () => ({ cols: 80, rows: 24 }),
-  options: { rect?: { width: number; height: number } } = {}
+  options: {
+    rect?: { width: number; height: number }
+    paneRect?: { width: number; height: number }
+  } = {}
 ): ManagedPaneInternal {
   const leafId = '11111111-1111-4111-8111-111111111111' as never
   return {
@@ -51,7 +54,10 @@ function createPane(
       cols: 79,
       rows: 24
     } as never,
-    container: { dataset: {} } as never,
+    container: {
+      dataset: {},
+      getBoundingClientRect: () => options.paneRect ?? ({ width: 800, height: 600 } as DOMRect)
+    } as never,
     xtermContainer: {
       getBoundingClientRect: () => options.rect ?? ({ width: 800, height: 600 } as DOMRect)
     } as never,
@@ -225,22 +231,72 @@ describe('attachPaneFitResizeObserver', () => {
     expect(pane.fitAddon.fit).not.toHaveBeenCalled()
   })
 
-  it('throttles an endlessly unstable grid instead of fitting every frame', () => {
+  it('does not fit an endlessly unstable grid (scrollbar/TUI col wobble)', () => {
     let cols = 80
+    const onSettled = vi.fn()
     const pane = createPane(() => {
       cols = cols === 80 ? 81 : 80
       return { cols, rows: 24 }
     })
 
-    attachPaneFitResizeObserver(pane)
-    mockResizeObservers[0]?.trigger()
-
-    for (let i = 0; i < 10; i += 1) {
+    requestStablePaneFit(pane, onSettled)
+    for (let i = 0; i < 12; i += 1) {
       flushAnimationFrames()
     }
 
-    expect(pane.fitAddon.fit).toHaveBeenCalledTimes(1)
+    expect(pane.fitAddon.fit).not.toHaveBeenCalled()
+    expect(onSettled).not.toHaveBeenCalled()
     expect(pane.pendingObservedFitRafId).toBeNull()
+  })
+
+  it('does not fit a stable 1-col scrollbar gutter after the pane box is known', () => {
+    const onSettled = vi.fn()
+    const pane = createPane(() => ({ cols: 80, rows: 24 }))
+
+    requestStablePaneFit(pane)
+    flushAnimationFrames()
+    expect(pane.fitAddon.fit).toHaveBeenCalledTimes(1)
+
+    vi.mocked(pane.fitAddon.fit).mockClear()
+    requestStablePaneFit(pane, onSettled)
+    flushAnimationFrames()
+
+    expect(pane.fitAddon.fit).not.toHaveBeenCalled()
+    expect(onSettled).not.toHaveBeenCalled()
+    expect(pane.pendingObservedFitRafId).toBeNull()
+  })
+
+  it('does not fit a stable +1 row after the pane box is known', () => {
+    const onSettled = vi.fn()
+    const pane = createPane(() => ({ cols: 79, rows: 25 }))
+
+    requestStablePaneFit(pane)
+    flushAnimationFrames()
+    expect(pane.fitAddon.fit).toHaveBeenCalledTimes(1)
+
+    vi.mocked(pane.fitAddon.fit).mockClear()
+    requestStablePaneFit(pane, onSettled)
+    flushAnimationFrames()
+
+    expect(pane.fitAddon.fit).not.toHaveBeenCalled()
+    expect(onSettled).not.toHaveBeenCalled()
+  })
+
+  it('fits a 1-col change when the outer pane box moved', () => {
+    let paneWidth = 800
+    const pane = createPane(() => ({ cols: 80, rows: 24 }))
+    pane.container.getBoundingClientRect = () => ({ width: paneWidth, height: 600 }) as DOMRect
+
+    requestStablePaneFit(pane)
+    flushAnimationFrames()
+    expect(pane.fitAddon.fit).toHaveBeenCalledTimes(1)
+
+    vi.mocked(pane.fitAddon.fit).mockClear()
+    paneWidth = 812
+    requestStablePaneFit(pane)
+    flushAnimationFrames()
+
+    expect(pane.fitAddon.fit).toHaveBeenCalledTimes(1)
   })
 
   it('disconnects the observer and cancels any queued fit', () => {

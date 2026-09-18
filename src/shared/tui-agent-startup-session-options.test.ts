@@ -16,7 +16,7 @@ describe('tui agent startup session options', () => {
       sessionOptions: { model: 'opus', effort: 'xhigh', fastMode: true },
       agentArgs: '--model haiku'
     })
-    expect(plan?.launchCommand).toBe("claude '--model' 'opus' '--effort' 'xhigh' '--model' 'haiku'")
+    expect(plan?.launchCommand).toBe('claude --model opus --effort xhigh --model haiku')
     expect(plan?.sessionOptions).toBeUndefined()
   })
 
@@ -56,9 +56,7 @@ describe('tui agent startup session options', () => {
       sessionOptions: { model: 'gpt-5.6-sol', effort: 'medium' },
       agentArgs: '--dangerously-bypass-approvals-and-sandbox'
     })
-    expect(plan?.launchConfig.agentCommand).toBe(
-      "codex '--dangerously-bypass-approvals-and-sandbox'"
-    )
+    expect(plan?.launchConfig.agentCommand).toBe('codex --dangerously-bypass-approvals-and-sandbox')
   })
 
   it('quotes option values for a remote POSIX launch', () => {
@@ -82,7 +80,7 @@ describe('tui agent startup session options', () => {
       platform: 'linux',
       sessionOptions: { model: 'opus', effort: 'high' }
     })
-    expect(plan?.launchCommand).toContain("claude '--model' 'opus' '--effort' 'high'")
+    expect(plan?.launchCommand).toContain('claude --model opus --effort high')
     expect(plan?.sessionOptions).toEqual({ model: 'opus', effort: 'high' })
   })
 
@@ -95,6 +93,19 @@ describe('tui agent startup session options', () => {
     })
     expect(plan?.launchCommand.startsWith('cursor agent --trust')).toBe(true)
     expect(plan?.expectedProcess).toBe('cursor')
+  })
+
+  it('launches cursor agent with unquoted model and yolo flags', () => {
+    const plan = buildAgentStartupPlan({
+      agent: 'cursor',
+      prompt: '',
+      cmdOverrides: { cursor: 'cursor agent' },
+      platform: 'linux',
+      allowEmptyPromptLaunch: true,
+      sessionOptions: { model: 'cursor-grok-4.6-high' },
+      agentArgs: '--yolo'
+    })
+    expect(plan?.launchCommand).toBe('cursor agent --trust --model cursor-grok-4.6-high --yolo')
   })
 
   it('never injects session options into resume commands', () => {

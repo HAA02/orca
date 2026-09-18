@@ -285,11 +285,22 @@ describe('runtime-status slice', () => {
     clearRuntimeCompatibilityCacheForTests()
   })
 
-  it('records null and returns false when a runtime refresh fails', async () => {
+  it('keeps the last reachable status when a later refresh fails', async () => {
     const getStatus = vi.fn().mockRejectedValue(new Error('closed'))
     stubRuntimeEnvironmentApi({ getStatus })
     const store = createSliceStore()
     store.getState().setRuntimeEnvironmentStatus('env-a', { status: makeStatus(), checkedAt: 1 })
+
+    const reachable = await store.getState().refreshRuntimeEnvironmentStatus('env-a')
+
+    expect(reachable).toBe(false)
+    expect(store.getState().runtimeStatusByEnvironmentId.get('env-a')?.status?.runtimeId).toBe('rt')
+  })
+
+  it('records null when the first refresh fails', async () => {
+    const getStatus = vi.fn().mockRejectedValue(new Error('closed'))
+    stubRuntimeEnvironmentApi({ getStatus })
+    const store = createSliceStore()
 
     const reachable = await store.getState().refreshRuntimeEnvironmentStatus('env-a')
 

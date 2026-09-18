@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { installWindowVisibilityInterval } from '@/lib/window-visibility-interval'
 import { AgentKanbanCard } from './AgentKanbanCard'
 import { AgentTerminalDialog } from './AgentTerminalDialog'
+import { DashboardViewToggle } from './DashboardViewToggle'
 import './agent-board-transitions.css'
 import { translate } from '@/i18n/i18n'
 
@@ -88,7 +89,14 @@ function KanbanColumn({
 }
 
 /** The pop-out agent board: status columns fed by the relayed snapshot. */
-export function AgentKanbanBoard({ snapshot }: { snapshot: DashboardSnapshot }): React.JSX.Element {
+export function AgentKanbanBoard({
+  snapshot,
+  onShowSplit
+}: {
+  snapshot: DashboardSnapshot
+  /** Provided by the pop-out root; absent when the board is rendered standalone. */
+  onShowSplit?: () => void
+}): React.JSX.Element {
   const grouped = useMemo(() => groupByBucket(snapshot.cards), [snapshot.cards])
   const hasRelativeTimestamps = useMemo(
     () => snapshot.cards.some((card) => (card.finishedAt ?? card.startedAt) > 0),
@@ -158,6 +166,17 @@ export function AgentKanbanBoard({ snapshot }: { snapshot: DashboardSnapshot }):
             count: snapshot.cards.length
           })}
         </span>
+        {onShowSplit ? (
+          <DashboardViewToggle
+            value="kanban"
+            onChange={(view) => {
+              if (view === 'split') {
+                onShowSplit()
+              }
+            }}
+            className="ml-auto"
+          />
+        ) : null}
       </div>
       <div className="scrollbar-sleek flex min-h-0 flex-1 overflow-x-auto p-3">
         {/* Why: columns share the window width up to a readable cap; mx-auto
