@@ -135,11 +135,11 @@ export function CursorAccountsSection({
                 {status?.cursorOnPath || status?.cursorAgentOnPath
                   ? translate(
                       'auto.components.settings.CursorAccountsSection.f6a7b8c9d0',
-                      'In a terminal, run cursor agent login, then click Refresh status here.'
+                      'In a terminal, run cursor-agent login, then click Refresh status here.'
                     )
                   : translate(
                       'auto.components.settings.CursorAccountsSection.a9b0c1d2e3',
-                      'Install Cursor IDE (or cursor-agent), then run cursor agent login in a terminal.'
+                      'Install cursor-agent (or Cursor IDE), then run cursor-agent login in a terminal.'
                     )}
               </p>
             </>

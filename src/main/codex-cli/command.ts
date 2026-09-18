@@ -103,6 +103,8 @@ function getBaseVersionManagerDirectories(platform: NodeJS.Platform, homePath: s
     directories.push(join(homePath, 'AppData', 'Roaming', 'npm'))
     directories.push(join(homePath, 'AppData', 'Local', 'pnpm'))
     directories.push(join(homePath, 'AppData', 'Local', 'Yarn', 'bin'))
+    // Why: Cursor ships cursor-agent.cmd here; GUI-launched Orca often lacks it on PATH.
+    directories.push(join(homePath, 'AppData', 'Local', 'cursor-agent'))
   } else {
     directories.push(join(homePath, '.local', 'bin'))
     // Why: pnpm uses platform-specific global bin directories that differ from

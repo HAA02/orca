@@ -62,6 +62,25 @@ export function withCursorTrustFlag(command: string): string {
   return /(?:^|\s)--trust(?:\s|$)/.test(command) ? command : `${command} --trust`
 }
 
+function resolveWindowsCursorAgentLaunchCommand(): string {
+  const localAppData = process.env.LOCALAPPDATA
+  if (localAppData) {
+    const candidate = joinPath(joinPath(localAppData, 'cursor-agent'), 'cursor-agent.cmd')
+    if (pathExists(candidate)) {
+      return candidate
+    }
+  }
+  return CURSOR_STANDALONE_AGENT_LAUNCH
+}
+
+/** Default launch command when the user has not set a Cursor command override. */
+export function resolveDefaultCursorLaunchCommand(): string {
+  // Why: Windows `cursor.exe` is the IDE launcher and does not expose `cursor agent`.
+  return process.platform === 'win32'
+    ? resolveWindowsCursorAgentLaunchCommand()
+    : CURSOR_IDE_AGENT_LAUNCH
+}
+
 /** Prefer the IDE CLI when `cursor` is on PATH so Orca shares the IDE's logged-in models. */
 export function suggestCursorIdeCliLaunch(args: {
   existingOverride?: string | null
@@ -69,6 +88,9 @@ export function suggestCursorIdeCliLaunch(args: {
   cursorOnPath: boolean
 }): string | undefined {
   if (args.existingOverride?.trim()) {
+    return undefined
+  }
+  if (process.platform === 'win32') {
     return undefined
   }
   if (args.cursorOnPath) {
@@ -87,9 +109,8 @@ export function resolveCursorCommandOverride(existing?: string | null): string |
     return undefined
   }
   // Why: the renderer PATH probe cannot see the same binaries as main-process
-  // detection. Launching `cursor-agent` then fails silently in Electron while
-  // `cursor` (IDE) is what the + menu detected. `cursor agent` is the CLI.
-  return CURSOR_IDE_AGENT_LAUNCH
+  // detection. On macOS/Linux prefer `cursor agent` so Orca shares IDE auth/models.
+  return resolveDefaultCursorLaunchCommand()
 }
 
 /** IDE CLI lists with `cursor agent models`; the standalone npm CLI uses `--list-models`. */

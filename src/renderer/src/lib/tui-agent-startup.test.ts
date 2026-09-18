@@ -132,6 +132,24 @@ describe('buildAgentStartupPlan', () => {
     })
   })
 
+  it('launches cursor on Windows cmd with default yolo args', () => {
+    expect(
+      buildAgentStartupPlan({
+        agent: 'cursor',
+        prompt: '',
+        cmdOverrides: {},
+        platform: 'win32',
+        shell: 'cmd',
+        allowEmptyPromptLaunch: true,
+        agentArgs: '--yolo'
+      })
+    ).toMatchObject({
+      agent: 'cursor',
+      launchCommand: 'cursor-agent --trust "--yolo"',
+      expectedProcess: 'cursor-agent'
+    })
+  })
+
   it('waits on the IDE process when Cursor is launched as cursor agent', () => {
     expect(
       buildAgentStartupPlan({

@@ -42,11 +42,11 @@ describe('CursorAccountsSection', () => {
     vi.clearAllMocks()
   })
 
-  it('tells the user to run cursor agent login when Cursor is on PATH', async () => {
+  it('tells the user to run cursor-agent login when Cursor is on PATH', async () => {
     render(<CursorAccountsSection sessionCookie="" updateSettings={vi.fn()} />)
     expect(
       await screen.findByText(
-        'In a terminal, run cursor agent login, then click Refresh status here.'
+        'In a terminal, run cursor-agent login, then click Refresh status here.'
       )
     ).toBeInTheDocument()
   })
