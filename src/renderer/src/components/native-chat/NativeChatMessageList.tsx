@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Image as ImageIcon } from 'lucide-react'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import CommentMarkdown, {
   type CommentMarkdownLinkClickHandler
 } from '@/components/sidebar/CommentMarkdown'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
-import { basename } from '@/lib/path'
 import {
   isTextBlock,
   type NativeChatBlock,
@@ -16,7 +15,7 @@ import { orderNativeChatMessages } from './native-chat-message-grouping'
 import { stripNoiseMessages } from './native-chat-noise'
 import { foldToolMessages, splitNativeChatBlocks } from './native-chat-tool-fold'
 import { isNearBottom, shouldShowJumpToLatest, type ScrollGeometry } from './native-chat-autoscroll'
-import { isNativeChatPastedImagePath } from './native-chat-image-paste'
+import { NativeChatImagePreview } from './NativeChatImagePreview'
 import { NativeChatToolRun } from './NativeChatToolRun'
 import { NativeChatCopyButton } from './NativeChatCopyButton'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
@@ -37,32 +36,29 @@ function proseToMarkdown(blocks: NativeChatBlock[]): string {
     .join('\n\n')
 }
 
-function ImageAttachmentRefs({ blocks }: { blocks: NativeChatBlock[] }): React.JSX.Element | null {
+function ImageAttachmentRefs({
+  blocks,
+  terminalTabId
+}: {
+  blocks: NativeChatBlock[]
+  terminalTabId: string
+}): React.JSX.Element | null {
   const images = blocks.filter((block) => block.type === 'image-ref')
   if (images.length === 0) {
     return null
   }
   return (
     <div className="mb-2 flex flex-wrap gap-1.5">
-      {images.map((image, index) => {
-        const label = image.alt ?? image.path ?? image.url ?? 'Image'
-        const name =
-          image.path && isNativeChatPastedImagePath(image.path)
-            ? translate('components.native-chat.composer.pastedImageLabel', 'Pasted image')
-            : image.path
-              ? basename(image.path)
-              : label
-        return (
-          <div
-            key={`${label}-${index}`}
-            className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
-            title={label}
-          >
-            <ImageIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{name}</span>
-          </div>
-        )
-      })}
+      {images.map((image, index) => (
+        <NativeChatImagePreview
+          key={`${image.alt ?? image.path ?? image.url ?? 'Image'}-${index}`}
+          terminalTabId={terminalTabId}
+          path={image.path}
+          url={image.url}
+          alt={image.alt}
+          size="message"
+        />
+      ))}
     </div>
   )
 }
@@ -128,7 +124,8 @@ function MessageRow({
   onScrollMessageToTop,
   onLinkClick,
   allowFileUriLinks = false,
-  deliveryFailed = false
+  deliveryFailed = false,
+  terminalTabId
 }: {
   message: NativeChatMessage
   expandSignal: boolean
@@ -137,6 +134,7 @@ function MessageRow({
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
   deliveryFailed?: boolean
+  terminalTabId: string
 }): React.JSX.Element | null {
   const rowRef = useRef<HTMLDivElement | null>(null)
   const { prose, tools } = useMemo(() => splitNativeChatBlocks(message.blocks), [message.blocks])
@@ -172,7 +170,7 @@ function MessageRow({
         <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-muted px-3.5 py-2.5 text-sm text-foreground">
           {markdown ? (
             <>
-              <ImageAttachmentRefs blocks={prose} />
+              <ImageAttachmentRefs blocks={prose} terminalTabId={terminalTabId} />
               <CommentMarkdown
                 content={markdown}
                 variant="document"
@@ -182,7 +180,7 @@ function MessageRow({
               />
             </>
           ) : (
-            <ImageAttachmentRefs blocks={prose} />
+            <ImageAttachmentRefs blocks={prose} terminalTabId={terminalTabId} />
           )}
         </div>
         {deliveryFailed ? (
@@ -218,7 +216,7 @@ function MessageRow({
           className="absolute -top-8 right-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
         />
       ) : null}
-      <ImageAttachmentRefs blocks={prose} />
+      <ImageAttachmentRefs blocks={prose} terminalTabId={terminalTabId} />
       {markdown ? (
         <CommentMarkdown
           content={markdown}
@@ -240,7 +238,8 @@ export function NativeChatMessageList({
   fontScale,
   onLinkClick,
   allowFileUriLinks = false,
-  failedDeliveryMessageIds
+  failedDeliveryMessageIds,
+  terminalTabId
 }: {
   session: NativeChatLiveSession
   isWorking: boolean
@@ -251,6 +250,7 @@ export function NativeChatMessageList({
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
   failedDeliveryMessageIds?: ReadonlySet<string>
+  terminalTabId: string
 }): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -408,6 +408,7 @@ export function NativeChatMessageList({
               onLinkClick={onLinkClick}
               allowFileUriLinks={allowFileUriLinks}
               deliveryFailed={failedDeliveryMessageIds?.has(message.id) === true}
+              terminalTabId={terminalTabId}
             />
           ))}
           {showTypingIndicator ? <TypingIndicatorRow /> : null}

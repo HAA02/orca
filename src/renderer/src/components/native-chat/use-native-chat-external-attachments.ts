@@ -49,6 +49,11 @@ export function useNativeChatExternalAttachments({
         return
       }
       if (owner.kind !== 'ssh') {
+        if (owner.kind === 'local') {
+          for (const filePath of paths) {
+            void window.api.fs.authorizeExternalPath({ targetPath: filePath })
+          }
+        }
         // 'runtime' proceeds so attachResolvedPaths' existing remote-session
         // gate reports the unsupported state.
         attachResolvedPaths(paths)

@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { createElement } from 'react'
 
 const mocks = vi.hoisted(() => ({
   resolveNativeChatAttachmentOwner: vi.fn(),
-  uploadNativeChatAttachmentPaths: vi.fn()
+  uploadNativeChatAttachmentPaths: vi.fn(),
+  authorizeExternalPath: vi.fn()
 }))
 
 vi.mock('@/store', () => ({
@@ -88,6 +89,17 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+beforeEach(() => {
+  Object.assign(globalThis, {
+    window: {
+      ...globalThis.window,
+      api: {
+        fs: { authorizeExternalPath: mocks.authorizeExternalPath }
+      }
+    }
+  })
+})
+
 describe('useNativeChatExternalAttachments', () => {
   it('attaches local worktree paths unchanged', async () => {
     mocks.resolveNativeChatAttachmentOwner.mockReturnValue({ kind: 'local' })
@@ -97,6 +109,7 @@ describe('useNativeChatExternalAttachments', () => {
       probe.latest().attachExternalPaths(['/local/a.txt'])
     })
     expect(attachResolvedPaths).toHaveBeenCalledWith(['/local/a.txt'])
+    expect(mocks.authorizeExternalPath).toHaveBeenCalledWith({ targetPath: '/local/a.txt' })
     expect(mocks.uploadNativeChatAttachmentPaths).not.toHaveBeenCalled()
   })
 
@@ -118,6 +131,7 @@ describe('useNativeChatExternalAttachments', () => {
       worktreePath: '/remote/wt'
     })
     expect(attachResolvedPaths).toHaveBeenCalledWith(['/remote/wt/.orca/drops/a.txt'])
+    expect(mocks.authorizeExternalPath).not.toHaveBeenCalled()
   })
 
   it('shows the not-ready notice instead of attaching unresolved paths', async () => {

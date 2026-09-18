@@ -381,6 +381,7 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     return (
       <NativeChatComposerField
         textareaRef={textareaRef}
+        terminalTabId={terminalTabId}
         draft={draft}
         disabled={disabled}
         hasPty={hasPty}

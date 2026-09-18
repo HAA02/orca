@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 
 import { app } from 'electron'
 import { requireSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
+import { authorizeExternalPath } from '../ipc/filesystem-auth'
 import { isWindowsAbsolutePathLike } from '../../shared/cross-platform-path'
 import { assertClipboardImageByteLengthWithinLimit } from '../../shared/clipboard-image'
 
@@ -41,5 +42,7 @@ export async function saveClipboardImageBufferAsTempFile(
 
   const tempPath = path.join(app.getPath('temp'), fileName)
   await fs.writeFile(tempPath, buffer)
+  // Why: Native Chat/editor previews read via fs.readFile, which is worktree-sandboxed.
+  authorizeExternalPath(tempPath)
   return tempPath
 }

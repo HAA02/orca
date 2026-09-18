@@ -27,7 +27,8 @@ const {
   nativeImageCreateFromBufferMock,
   randomUUIDMock,
   getSshFilesystemProviderMock,
-  callRuntimeEnvironmentMock
+  callRuntimeEnvironmentMock,
+  authorizeExternalPathMock
 } = vi.hoisted(() => ({
   removeHandlerMock: vi.fn(),
   handleMock: vi.fn(),
@@ -60,7 +61,8 @@ const {
   nativeImageCreateFromBufferMock: vi.fn(),
   randomUUIDMock: vi.fn(() => '00000000-0000-4000-8000-000000000000'),
   getSshFilesystemProviderMock: vi.fn(),
-  callRuntimeEnvironmentMock: vi.fn()
+  callRuntimeEnvironmentMock: vi.fn(),
+  authorizeExternalPathMock: vi.fn()
 }))
 
 vi.mock('node:child_process', () => ({
@@ -83,7 +85,8 @@ vi.mock('../ipc/filesystem-auth', () => ({
     'Access denied: path resolves outside allowed directories. If this blocks a legitimate workflow, please file a GitHub issue.',
   isENOENT: (error: unknown): boolean =>
     error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT',
-  resolveAuthorizedPath: resolveAuthorizedPathMock
+  resolveAuthorizedPath: resolveAuthorizedPathMock,
+  authorizeExternalPath: authorizeExternalPathMock
 }))
 
 vi.mock('node:crypto', () => ({
@@ -214,6 +217,7 @@ describe('registerClipboardHandlers', () => {
     randomUUIDMock.mockReturnValue('00000000-0000-4000-8000-000000000000')
     getSshFilesystemProviderMock.mockReset()
     callRuntimeEnvironmentMock.mockReset()
+    authorizeExternalPathMock.mockReset()
     setTrustedClipboardRendererWebContentsId(null)
   })
 
@@ -558,6 +562,7 @@ describe('registerClipboardHandlers', () => {
       handlers.get('clipboard:saveImageAsTempFile')?.(makeClipboardEvent(), undefined)
     ).resolves.toBe(expectedPath)
     expect(fsWriteFileMock).toHaveBeenCalledWith(expectedPath, png)
+    expect(authorizeExternalPathMock).toHaveBeenCalledWith(expectedPath)
     expect(clipboardReadBufferMock).not.toHaveBeenCalled()
     expect(fsOpenMock).not.toHaveBeenCalled()
     expect(getSshFilesystemProviderMock).not.toHaveBeenCalled()
@@ -786,6 +791,7 @@ describe('registerClipboardHandlers', () => {
       png.toString('base64')
     )
     expect(fsWriteFileMock).not.toHaveBeenCalled()
+    expect(authorizeExternalPathMock).not.toHaveBeenCalled()
   })
 
   it('uses Windows path joining for Windows SSH temp directories', async () => {
