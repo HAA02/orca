@@ -213,7 +213,7 @@ export const TUI_AGENT_CONFIG: Record<TuiAgent, TuiAgentConfig> = {
   },
   cursor: {
     detectCmd: 'cursor-agent',
-    // Why: detect either the standalone CLI or the IDE launcher; launch defaults to cursor-agent (Windows) or cursor agent (macOS/Linux).
+    // Why: detect either the standalone CLI or the IDE launcher; launch defaults to the standalone cursor-agent CLI.
     detectCmdAliases: ['cursor'],
     launchCmd: 'cursor-agent',
     expectedProcess: 'cursor-agent',

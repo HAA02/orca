@@ -75,10 +75,11 @@ function resolveWindowsCursorAgentLaunchCommand(): string {
 
 /** Default launch command when the user has not set a Cursor command override. */
 export function resolveDefaultCursorLaunchCommand(): string {
-  // Why: Windows `cursor.exe` is the IDE launcher and does not expose `cursor agent`.
+  // Why: the standalone `cursor-agent` CLI accepts --trust/--yolo/--model on every
+  // platform; the IDE launcher's `cursor agent` is not always on PATH.
   return process.platform === 'win32'
     ? resolveWindowsCursorAgentLaunchCommand()
-    : CURSOR_IDE_AGENT_LAUNCH
+    : CURSOR_STANDALONE_AGENT_LAUNCH
 }
 
 /** Prefer the IDE CLI when `cursor` is on PATH so Orca shares the IDE's logged-in models. */
@@ -109,7 +110,7 @@ export function resolveCursorCommandOverride(existing?: string | null): string |
     return undefined
   }
   // Why: the renderer PATH probe cannot see the same binaries as main-process
-  // detection. On macOS/Linux prefer `cursor agent` so Orca shares IDE auth/models.
+  // detection. Default to the standalone `cursor-agent` CLI on macOS/Linux.
   return resolveDefaultCursorLaunchCommand()
 }
 

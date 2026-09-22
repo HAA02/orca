@@ -78,6 +78,18 @@ describe('cursor agent command', () => {
     }
   })
 
+  it('defaults to the standalone cursor-agent CLI on macOS/Linux', () => {
+    const previousPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+    try {
+      expect(resolveDefaultCursorLaunchCommand()).toBe(CURSOR_STANDALONE_AGENT_LAUNCH)
+    } finally {
+      if (previousPlatform) {
+        Object.defineProperty(process, 'platform', previousPlatform)
+      }
+    }
+  })
+
   it('defaults to cursor-agent on Windows even when the IDE cursor binary is on PATH', () => {
     const previousPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
     const previousLocalAppData = process.env.LOCALAPPDATA
