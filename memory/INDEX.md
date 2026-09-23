@@ -1,7 +1,7 @@
 # Orca 작업 지식
 
 작성: HAA02 / 2026-09-17 / develop  
-최신 handoff: [2026-09-17-opencode-model-pin-and-wip-commit](./handoff/2026-09-17-opencode-model-pin-and-wip-commit.md)
+최신 handoff: [2026-09-23-session-orchestration-usage](./handoff/2026-09-23-session-orchestration-usage.md)
 
 이 워크트리(`/run/media/iaan/1TB-WD/Github/orca`)는 GitHub `origin` (`HAA02/orca`, upstream `stablyai/orca`) 위의 `develop`이다. 사내 거울은 GitLab `ti/orca`.
 
