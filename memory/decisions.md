@@ -20,6 +20,12 @@
 왜: 업스트림 PR 경로는 GitHub, 작업 지식 공유는 사내 GitLab. 신규 프로젝트는 `ti` 그룹만.  
 누가/언제: HAA02 / 2026-09-16.
 
+## 2026-09-28 — 바탕화면 기동은 pty.node가 있을 때만 Electron을 연다
+
+무엇을: `orca open`/`serve` 앞에서 `ensure-desktop-native-runtime.mjs`가 `build/Release/pty.node` 부재만 보고, 없을 때만 `ensure-native-runtime --runtime=electron`을 실행한다.  
+왜: 빠진 바이너리로 Electron을 띄우면 창이 생기기 전에 죽는다. 매 클릭마다 전체 프로브를 돌리면 건강한 기동이 약 11초 느려진다.  
+누가/언제: HAA02 / 2026-09-28.
+
 ## 2026-09-17 — opencode 기본 실행 모델은 deepseek v4.1 flash
 
 무엇을: 카탈로그 `launchDefaultModel` opt-in으로 opencode만 사용자 미선택 상태에서도 `--model opencode-go/deepseek-v4.1-flash`를 붙인다. 커밋메시지 AI 기본값과 디스커버리 우선순위도 같은 모델.  

@@ -26,6 +26,12 @@ Linux에서 `/usr/bin/orca`는 스크린리더다. 이 앱 런처/심링크가 �
 
 `/run/media/...` 파일시스템이 exec 비트를 강제해 `skills/*/SKILL.md`가 전부 실행 가능으로 보인다. `generate-skill-bundle-manifest.mjs`가 "Executable file is not allowed in a shipped skill"로 exit 1. `core.fileMode=false`라 git에는 안 잡히고, 저장소 문제가 아니라 파일시스템 문제다.
 
+## 바탕화면 오르카는 pty.node가 없으면 창 없이 죽는다
+
+`pnpm dev`는 `ensure:electron-runtime`을 먼저 타지만, 바탕화면 `orca open`은 Electron을 바로 실행한다. Linux `node-pty` prebuild는 없고 `build/Release/pty.node`가 비면 메인 프로세스가 로드 중 죽는다. 오류 창은 XWayland에서 10×10으로 숨어서 아이콘이 아무 일도 안 한 것처럼 보인다.
+
+대응: `orca open`/`serve`와 이 PC의 `orca-electron-x11.sh`가 `config/scripts/ensure-desktop-native-runtime.mjs`로 빠져 있는 아티팩트만 복구한다. 건강한 기동마다 전체 Electron 프로브(약 11초)를 돌리지 말 것. 수동 복구는 `pnpm run ensure:electron-runtime`.
+
 ## oxfmt가 max-lines를 넘길 수 있다
 
 pre-commit(lint-staged)은 oxlint → oxfmt 순서라, oxfmt가 긴 파일을 재포맷해 카운트 줄 수를 늘려 max-lines를 초과시킬 수 있다. 예: `NativeChatView.tsx`가 403 / 400이 됨. 커밋 후 `pnpm exec oxlint` 전체를 다시 돌려 확인할 것.
