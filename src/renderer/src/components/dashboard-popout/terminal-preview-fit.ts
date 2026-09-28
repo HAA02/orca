@@ -45,7 +45,10 @@ export function createTerminalPreviewFit(
           schedule()
         })
       : null
-  resizeObserver?.observe(box)
+  // Why: the ternary condition does not narrow `box` for a later statement.
+  if (box) {
+    resizeObserver?.observe(box)
+  }
 
   return {
     schedule,
