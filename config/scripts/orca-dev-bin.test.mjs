@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -49,5 +49,38 @@ describe('orca-dev package bin', () => {
       userDataPath: path.join(root, 'user-data'),
       appExecutable: path.join(root, 'Electron')
     })
+  })
+
+  it('restores the desktop native module before open and skips the CLI when that fails', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'orca-dev-bin-'))
+    const cliEntry = path.join(root, 'cli-entry.cjs')
+    const outputPath = path.join(root, 'output.json')
+    const nativeRuntimeScript = path.join(root, 'native-runtime.cjs')
+    const nativeRuntimeLog = path.join(root, 'native-runtime.log')
+    writeFileSync(
+      cliEntry,
+      `require("node:fs").writeFileSync(${JSON.stringify(outputPath)}, "cli")\n`,
+      'utf8'
+    )
+    writeFileSync(
+      nativeRuntimeScript,
+      `require("node:fs").writeFileSync(${JSON.stringify(nativeRuntimeLog)}, "checked")\nprocess.exit(1)\n`,
+      'utf8'
+    )
+
+    const result = spawnSync(process.execPath, [wrapperPath, 'open'], {
+      env: {
+        ...process.env,
+        ORCA_DEV_CLI_ENTRY_PATH: cliEntry,
+        ORCA_DEV_NATIVE_RUNTIME_SCRIPT: nativeRuntimeScript,
+        ORCA_DEV_USER_DATA_PATH: path.join(root, 'user-data'),
+        ORCA_APP_EXECUTABLE: path.join(root, 'Electron')
+      },
+      encoding: 'utf8'
+    })
+
+    expect(result.status).toBe(1)
+    expect(readFileSync(nativeRuntimeLog, 'utf8')).toBe('checked')
+    expect(() => readFileSync(outputPath, 'utf8')).toThrow()
   })
 })

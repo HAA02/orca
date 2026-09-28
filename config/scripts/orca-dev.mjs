@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process'
 import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:fs'
 import path from 'node:path'
+import { launchesDesktopApp } from './ensure-desktop-native-runtime.mjs'
 
 const scriptPath = realpathSync(import.meta.filename)
 const scriptDir = path.dirname(scriptPath)
@@ -21,6 +22,20 @@ const electronExecutable = getElectronExecutable()
 if (!process.env.ORCA_APP_EXECUTABLE && isRunnableFile(electronExecutable)) {
   process.env.ORCA_APP_EXECUTABLE = electronExecutable
   process.env.ORCA_APP_EXECUTABLE_NEEDS_APP_ROOT = '1'
+}
+
+if (launchesDesktopApp(process.argv.slice(2))) {
+  const nativeRuntimeScript =
+    process.env.ORCA_DEV_NATIVE_RUNTIME_SCRIPT ??
+    path.join(scriptDir, 'ensure-desktop-native-runtime.mjs')
+  const nativeRuntime = spawnSync(process.execPath, [nativeRuntimeScript], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    env: process.env
+  })
+  if ((nativeRuntime.status ?? 1) !== 0) {
+    process.exit(nativeRuntime.status ?? 1)
+  }
 }
 
 const result = spawnSync(process.execPath, [cliEntry, ...process.argv.slice(2)], {
