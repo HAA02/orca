@@ -1,4 +1,4 @@
-import { E2EE_KEYPAIR_FILENAME } from '../../shared/runtime-environment-store'
+import { E2EE_KEYPAIR_FILENAME } from '../../shared/e2ee-keypair-filename'
 
 export { E2EE_KEYPAIR_FILENAME }
 

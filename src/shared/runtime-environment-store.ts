@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { E2EE_KEYPAIR_FILENAME } from './e2ee-keypair-filename'
 import { parsePairingCode, type PairingOffer } from './pairing'
 import { hardenExistingSecureFile, writeSecureJsonFile } from './secure-file'
 import {
@@ -14,7 +15,6 @@ import {
 } from './runtime-environments'
 
 const ENVIRONMENTS_FILE = 'orca-environments.json'
-export const E2EE_KEYPAIR_FILENAME = 'orca-e2ee-keypair.json'
 
 export type RuntimeEnvironmentStoreErrorCode = 'invalid_argument' | 'runtime_error'
 
