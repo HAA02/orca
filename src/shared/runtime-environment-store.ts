@@ -14,6 +14,7 @@ import {
 } from './runtime-environments'
 
 const ENVIRONMENTS_FILE = 'orca-environments.json'
+export const E2EE_KEYPAIR_FILENAME = 'orca-e2ee-keypair.json'
 
 export type RuntimeEnvironmentStoreErrorCode = 'invalid_argument' | 'runtime_error'
 
@@ -46,6 +47,13 @@ export function addEnvironmentFromPairingCode(
       'Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.'
     )
   }
+  // Why: pairing with our own runtime mirrors its tab snapshots over local tabs, so new terminals vanish.
+  if (offer.publicKeyB64 === readLocalE2EEPublicKey(userDataPath)) {
+    throw new RuntimeEnvironmentStoreError(
+      'invalid_argument',
+      'This pairing code belongs to this Orca instance. Pair from the other device instead.'
+    )
+  }
   const store = readEnvironmentStore(userDataPath)
   const now = args.now ?? Date.now()
   const existing = store.environments.find((entry) => entry.name === args.name)
@@ -72,6 +80,15 @@ export function addEnvironmentFromPairingCode(
   }
   writeEnvironmentStore(userDataPath, next)
   return environment
+}
+
+function readLocalE2EEPublicKey(userDataPath: string): string | null {
+  try {
+    const raw = JSON.parse(readFileSync(join(userDataPath, E2EE_KEYPAIR_FILENAME), 'utf-8'))
+    return typeof raw?.publicKeyB64 === 'string' ? raw.publicKeyB64 : null
+  } catch {
+    return null
+  }
 }
 
 export function removeEnvironment(userDataPath: string, selector: string): KnownRuntimeEnvironment {

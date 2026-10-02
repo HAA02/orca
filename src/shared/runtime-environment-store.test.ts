@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -53,6 +53,23 @@ describe('runtime environment store', () => {
       })
     ).toThrow(RuntimeEnvironmentStoreError)
     expect(listEnvironments(userDataPath)).toEqual([first])
+  })
+
+  it('rejects a pairing code that points back at this Orca instance', () => {
+    const userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-env-store-'))
+    tempDirs.push(userDataPath)
+    writeFileSync(
+      join(userDataPath, 'orca-e2ee-keypair.json'),
+      JSON.stringify({
+        v: 1,
+        publicKeyB64: Buffer.from(new Uint8Array(32).fill(1)).toString('base64')
+      })
+    )
+
+    expect(() =>
+      addEnvironmentFromPairingCode(userDataPath, { name: 'self', pairingCode: pairingCode() })
+    ).toThrow(RuntimeEnvironmentStoreError)
+    expect(listEnvironments(userDataPath)).toEqual([])
   })
 
   it('throttles lastUsedAt writes so it does not rewrite the store on every runtime call', () => {
