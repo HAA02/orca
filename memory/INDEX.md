@@ -1,11 +1,15 @@
 # Orca 작업 지식
 
-작성: HAA02 / 2026-09-28 / develop  
-최신 handoff: [2026-09-28-desktop-pty-restore](./handoff/2026-09-28-desktop-pty-restore.md)
+작성: HAA02 / 2026-10-19 / develop  
+최신 handoff: [2026-10-19-mobile-stale-ws-port](./handoff/2026-10-19-mobile-stale-ws-port.md)
 
-이 워크트리(`/run/media/iaan/1TB-WD/Github/orca`)는 GitHub `origin` (`HAA02/orca`, upstream `stablyai/orca`) 위의 `develop`이다. 사내 거울은 GitLab `ti/orca`.
+> 공개 저장소 주의: GitHub `origin`은 PUBLIC 포크(비공개 전환 불가). memory/에 로컬 경로·IP·기기명·이메일·토큰을 쓰지 않는다.
+
+이 워크트리는 GitHub `origin` (`HAA02/orca`, upstream `stablyai/orca`) 위의 `develop`이다. 사내 거울은 GitLab `ti/orca`.
 
 ## 현재 상태
+
+모바일 연결 실패(`check Tailscale`)는 폰에 저장된 WS 포트와 호스트 실제 포트 불일치였다. Orca 재시작으로 해소. 진단법은 [handoff](./handoff/2026-10-19-mobile-stale-ws-port.md). `develop`은 origin보다 2커밋 앞섬(페어링 코드 자기참조 거부, E2EE 키 파일명 분리).
 
 바탕화면 오르카가 `node-pty` `pty.node` 부재로 창 없이 죽던 문제를 고쳤다. `orca open`/`serve`는 Electron을 띄우기 전에 아티팩트가 없으면 복구한다. 이 PC 래퍼 `~/.local/share/orca-wrappers/orca-electron-x11.sh`도 같은 스크립트를 호출한다(저장소 밖).
 
