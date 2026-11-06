@@ -50,6 +50,7 @@ import { resolveNativeChatFileLinkContext } from './native-chat-file-link'
 import { selectNativeChatRuntimeEnvironmentId } from './native-chat-runtime-owner'
 import { useNativeChatPasteBridge } from './use-native-chat-paste-bridge'
 import { useNativeChatFileLinkClick } from './use-native-chat-file-link-click'
+import { useNativeChatPaneHitTarget } from './use-native-chat-pane-hit-target'
 import { excerptNativeChatLeadContext } from '../../../../shared/native-chat-teammate-mention'
 import type { NativeChatResolvedViewProps, NativeChatViewProps } from './native-chat-view-types'
 
@@ -351,6 +352,7 @@ function NativeChatResolvedView({
     interactiveSend.cancel()
   }, [interactiveSend, pendingScope])
   const nativeChatFileLinkClick = useNativeChatFileLinkClick(fileLinkContext)
+  useNativeChatPaneHitTarget(rootRef)
 
   // Chat-only font zoom via Cmd/Ctrl +/-/0, gated to the live conversation so
   // the chord is inert on the loading/empty/error states and elsewhere.
@@ -360,6 +362,7 @@ function NativeChatResolvedView({
     <div
       ref={rootRef}
       data-native-chat-root="true"
+      data-pane-prevent-terminal-focus=""
       tabIndex={-1}
       onPointerDownCapture={(event) => {
         if (event.button === 2) {

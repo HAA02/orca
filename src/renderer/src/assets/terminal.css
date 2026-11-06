@@ -498,6 +498,19 @@
   margin-left: var(--pane-padding-x, 4px);
 }
 
+/* Why: on Linux the WebGL canvas is composited off its DOM box and takes the
+   click, so the hit is not the chat pixel under the pointer. */
+.pane[data-native-chat-open] .xterm-container {
+  visibility: hidden;
+}
+.pane[data-native-chat-open] .xterm-container canvas {
+  display: none !important;
+}
+.pane[data-native-chat-open] .xterm-container,
+.pane[data-native-chat-open] .xterm-container * {
+  pointer-events: none !important;
+}
+
 /* When a pane has a title, shift the terminal content down to make room.
    The .pane container uses position: relative, so the absolutely-positioned
    title bar occupies the top title-height pixels. Height is reduced by the

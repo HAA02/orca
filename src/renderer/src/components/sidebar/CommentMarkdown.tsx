@@ -13,6 +13,7 @@ import {
   isTrustedCompactImageSrc,
   type CommentMarkdownLinkClickHandler
 } from './comment-markdown-element-renderers'
+import { remarkChatFilePathLinks } from './comment-markdown-file-path-links'
 
 export type { CommentMarkdownLinkClickHandler } from './comment-markdown-element-renderers'
 
@@ -185,6 +186,8 @@ type CommentMarkdownProps = React.ComponentPropsWithoutRef<'div'> & {
   githubRepo?: GitHubRepoReference | null
   onLinkClick?: CommentMarkdownLinkClickHandler
   allowFileUriLinks?: boolean
+  /** Bare paths and inline-code paths become links. Native chat only. */
+  linkifyFilePaths?: boolean
 }
 
 // Why forwardRef + rest props: Radix's HoverCardTrigger asChild merges a ref
@@ -199,6 +202,7 @@ const CommentMarkdown = React.memo(
       githubRepo,
       onLinkClick,
       allowFileUriLinks = false,
+      linkifyFilePaths = false,
       ...rest
     },
     ref
@@ -213,10 +217,15 @@ const CommentMarkdown = React.memo(
         ? createDocumentCommentMarkdownComponents(onLinkClick)
         : createCompactCommentMarkdownComponents(onLinkClick)
     }, [variant, onLinkClick])
-    const activeRemarkPlugins = React.useMemo(
-      () => (githubRepo ? [...remarkPlugins, remarkGitHubReferences(githubRepo)] : remarkPlugins),
-      [githubRepo]
-    )
+    const activeRemarkPlugins = React.useMemo(() => {
+      const plugins = githubRepo
+        ? [...remarkPlugins, remarkGitHubReferences(githubRepo)]
+        : [...remarkPlugins]
+      if (linkifyFilePaths) {
+        plugins.push(remarkChatFilePathLinks)
+      }
+      return plugins
+    }, [githubRepo, linkifyFilePaths])
 
     return (
       <div

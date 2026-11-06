@@ -1,13 +1,14 @@
-import { shell, type WebContents } from 'electron'
+import type { WebContents } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { normalizeExternalBrowserUrl } from '../../shared/browser-url'
+import { openHttpUrlInSystemBrowser } from '../system-browser-open'
 
 /** Keep remote documents from inheriting an Orca window's privileged preload. */
 export function installPrivilegedWindowNavigationPolicy(contents: WebContents): void {
   contents.setWindowOpenHandler(({ url }) => {
     const externalUrl = normalizeExternalBrowserUrl(url)
     if (externalUrl) {
-      void shell.openExternal(externalUrl)
+      void openHttpUrlInSystemBrowser(externalUrl)
     }
     return { action: 'deny' }
   })
@@ -26,7 +27,7 @@ export function installPrivilegedWindowNavigationPolicy(contents: WebContents): 
           // Fall through and block malformed navigation targets.
         }
       }
-      void shell.openExternal(externalUrl)
+      void openHttpUrlInSystemBrowser(externalUrl)
     }
     event.preventDefault()
   })

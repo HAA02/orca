@@ -10,6 +10,7 @@ import {
   EXTERNAL_EDITOR_CLI_COMMAND,
   resolveExternalEditorLaunchSpec
 } from '../external-editor-launch'
+import { openHttpUrlInSystemBrowser } from '../system-browser-open'
 
 export { EXTERNAL_EDITOR_CLI_COMMAND }
 
@@ -157,7 +158,7 @@ export function registerShellHandlers(): void {
       return
     }
 
-    return shell.openExternal(parsed.toString())
+    return openHttpUrlInSystemBrowser(parsed.toString())
   })
 
   ipcMain.handle('shell:openFilePath', async (_event, filePath: string): Promise<boolean> => {

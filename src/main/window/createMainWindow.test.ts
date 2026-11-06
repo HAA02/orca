@@ -49,6 +49,10 @@ vi.mock('@electron-toolkit/utils', () => ({
   is: isMock
 }))
 
+vi.mock('../system-browser-open', () => ({
+  openHttpUrlInSystemBrowser: (...args: unknown[]) => openExternalMock(...args)
+}))
+
 vi.mock('../app-icon', () => ({
   getAppIconPath: vi.fn(() => 'icon')
 }))

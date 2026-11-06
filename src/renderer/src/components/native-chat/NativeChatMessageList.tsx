@@ -177,6 +177,7 @@ function MessageRow({
                 className="text-sm"
                 onLinkClick={onLinkClick}
                 allowFileUriLinks={allowFileUriLinks}
+                linkifyFilePaths={allowFileUriLinks}
               />
             </>
           ) : (
@@ -224,6 +225,7 @@ function MessageRow({
           className="text-sm"
           onLinkClick={onLinkClick}
           allowFileUriLinks={allowFileUriLinks}
+          linkifyFilePaths={allowFileUriLinks}
         />
       ) : null}
       {tools.length > 0 ? <NativeChatToolRun blocks={tools} expandSignal={expandSignal} /> : null}

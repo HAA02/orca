@@ -8,6 +8,7 @@ import CommentMarkdown from './CommentMarkdown'
 describe('CommentMarkdown link click handler', () => {
   let root: Root | null = null
   let container: HTMLDivElement | null = null
+  const openUrlMock = vi.fn()
 
   afterEach(() => {
     if (root) {
@@ -16,6 +17,8 @@ describe('CommentMarkdown link click handler', () => {
     container?.remove()
     root = null
     container = null
+    openUrlMock.mockReset()
+    delete (window as unknown as { api?: unknown }).api
   })
 
   it('lets callers intercept rendered document links', () => {
@@ -145,5 +148,83 @@ describe('CommentMarkdown link click handler', () => {
 
     expect(onLinkClick).toHaveBeenCalledWith(expect.any(Object), 'assets/diagram.png')
     expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('opens http links from a click instead of leaving them to the browser', () => {
+    ;(window as unknown as { api: unknown }).api = { shell: { openUrl: openUrlMock } }
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+
+    act(() => {
+      root?.render(
+        <CommentMarkdown
+          variant="document"
+          content={'| URL |\n| --- |\n| http://192.168.0.72:8092/dtdweb |'}
+        />
+      )
+    })
+
+    const anchor = container.querySelector<HTMLAnchorElement>(
+      'a[href="http://192.168.0.72:8092/dtdweb"]'
+    )
+    expect(anchor).not.toBeNull()
+    const event = new window.MouseEvent('click', { bubbles: true, cancelable: true })
+
+    act(() => {
+      anchor?.dispatchEvent(event)
+    })
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(openUrlMock).toHaveBeenCalledWith('http://192.168.0.72:8092/dtdweb')
+  })
+
+  it('does not open an http link the caller already claimed', () => {
+    const onLinkClick = vi.fn((event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault()
+    })
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+
+    act(() => {
+      root?.render(
+        <CommentMarkdown
+          variant="document"
+          content="http://192.168.0.72:8092/dtdweb"
+          onLinkClick={onLinkClick}
+        />
+      )
+    })
+
+    const anchor = container.querySelector<HTMLAnchorElement>('a')
+    const event = new window.MouseEvent('click', { bubbles: true, cancelable: true })
+    act(() => {
+      anchor?.dispatchEvent(event)
+    })
+
+    expect(onLinkClick).toHaveBeenCalled()
+    expect(openUrlMock).not.toHaveBeenCalled()
+  })
+
+  it('linkifies bare file paths and inline code paths when asked', () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+
+    act(() => {
+      root?.render(
+        <CommentMarkdown
+          variant="document"
+          content="Edit src/app/Main.tsx or `lib/util.ts`."
+          linkifyFilePaths
+        />
+      )
+    })
+
+    expect(container.querySelector('a[href="src/app/Main.tsx"]')?.textContent).toBe(
+      'src/app/Main.tsx'
+    )
+    expect(container.querySelector('a[href="lib/util.ts"] code')?.textContent).toBe('lib/util.ts')
   })
 })

@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Components } from 'react-markdown'
+import { openHttpLink } from '@/lib/http-link-routing'
 import { isMermaidFence, isMermaidPre, renderMermaidFence } from './comment-mermaid-fence'
 import {
   GitHubUserAttachmentImage,
@@ -23,6 +24,27 @@ export function isTrustedCompactImageSrc(src: string | undefined): src is string
   )
 }
 
+const HTTP_MARKDOWN_HREF = /^https?:\/\//i
+
+function openUnhandledMarkdownHttpLink(
+  event: React.MouseEvent<HTMLElement>,
+  href: string | undefined
+): void {
+  if (event.defaultPrevented) {
+    return
+  }
+  const url = href?.trim()
+  if (!url || !HTTP_MARKDOWN_HREF.test(url)) {
+    return
+  }
+  // Why: target="_blank" is denied on Linux when the session blocks openExternal.
+  // Claim the click and hand the URL to the same opener as the rest of the app.
+  event.preventDefault()
+  const isMac = typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
+  const primaryModifier = isMac ? event.metaKey : event.ctrlKey
+  openHttpLink(url, { forceSystemBrowser: event.shiftKey && primaryModifier })
+}
+
 function handleMarkdownAnchorClick(
   event: React.MouseEvent<HTMLAnchorElement>,
   href: string | undefined,
@@ -35,6 +57,7 @@ function handleMarkdownAnchorClick(
     event.preventDefault()
   }
   onLinkClick?.(event, href)
+  openUnhandledMarkdownHttpLink(event, href)
 }
 
 function handleMarkdownImageClick(
